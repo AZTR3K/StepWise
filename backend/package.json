@@ -1,0 +1,14 @@
+{
+  "name": "stepwise-cloud-functions",
+  "description": "Serverless backend microservices for the StepWise Engine.",
+  "version": "1.0.0",
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^11.8.0",
+    "firebase-functions": "^4.3.1"
+  },
+  "private": true
+}
