@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'widgets/custom_text_field.dart';
 import 'widgets/primary_button.dart';
+import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onSwitch;
@@ -23,13 +24,21 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      print("Login Successful!");
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? 'Authentication failed.')),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -72,8 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF161616),
               borderRadius: BorderRadius.circular(20),
-              border: Border(
-                left: BorderSide(color: const Color(0xFF4A6BFF), width: 4),
+              border: const Border(
+                left: BorderSide(color: Color(0xFF4A6BFF), width: 4),
               ),
             ),
             child: Column(
