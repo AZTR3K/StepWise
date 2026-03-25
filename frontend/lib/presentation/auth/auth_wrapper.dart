@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import '../home/home_screen.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -10,70 +12,41 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  int _currentIndex = 0;
-
-  void _switchScreen(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
+  bool _showLogin = true;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        // Use IndexedStack to keep the state of text fields when switching
-        child: IndexedStack(
-          index: _currentIndex,
-          children: [
-            LoginScreen(onSwitch: () => _switchScreen(1)),
-            RegisterScreen(onSwitch: () => _switchScreen(0)),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: const BoxDecoration(
-          color: Color(0xFF181818),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(0, Icons.login, "LOGIN"),
-            _buildNavItem(1, Icons.person_add, "REGISTER"),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () => _switchScreen(index),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? Colors.white : Colors.white38,
-            size: 28,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white38,
-              fontSize: 10,
-              letterSpacing: 1.2,
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Still connecting to Firebase
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF08080F),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF6B7FFF),
+              ),
             ),
-          ),
-        ],
-      ),
+          );
+        }
+
+        // User is logged in → go to HomeScreen
+        if (snapshot.hasData && snapshot.data != null) {
+          return const HomeScreen();
+        }
+
+        // User is not logged in → show Login or Register
+        if (_showLogin) {
+          return LoginScreen(
+            onNavigateToRegister: () => setState(() => _showLogin = false),
+          );
+        } else {
+          return RegisterScreen(
+            onNavigateToLogin: () => setState(() => _showLogin = true),
+          );
+        }
+      },
     );
   }
 }

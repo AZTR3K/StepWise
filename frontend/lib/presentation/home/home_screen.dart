@@ -28,9 +28,12 @@ class HomeScreen extends StatelessWidget {
                 fontSize: 18,
               ),
             ),
-            Text(
-              "Kinetic Manuscript",
+            Flexible(
+              child: Text(
+              "Algorithm Visualiser",
               style: TextStyle(color: Colors.white54, fontSize: 14),
+              overflow: TextOverflow.ellipsis, // optional: graceful truncation
+              ),
             ),
           ],
         ),
@@ -233,7 +236,7 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 20),
         Container(
           height: 45,
-          width: 200,
+          width: 180,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(25),
             gradient: const LinearGradient(
@@ -245,6 +248,10 @@ class HomeScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+              ),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
