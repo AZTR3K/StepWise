@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:frontend/presentation/home/category_detail_screen.dart';
 import '../auth/auth_wrapper.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -490,7 +491,17 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildGridCard(
       String title, String sub, IconData icon, Color color) {
-    return Container(
+        return GestureDetector(
+    onTap: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CategoryDetailScreen(
+          categoryTitle: title,
+          accentColor: color,
+        ),
+      ),
+    ),
+    child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _card,
@@ -536,7 +547,8 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
-    );
+    )
+   );
   }
 
   // ─── Stat tile ────────────────────────────────────────────
