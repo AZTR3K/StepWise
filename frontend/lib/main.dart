@@ -20,6 +20,7 @@ class StepWiseApp extends StatelessWidget {
     return MaterialApp(
       title: 'StepWise Resonance',
       debugShowCheckedModeBanner: false,
+      showSemanticsDebugger: false,
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF121212),
