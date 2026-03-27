@@ -24,8 +24,10 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-    _fadeAnimation =
-        CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
     _fadeController.forward();
   }
 
@@ -70,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen>
           FadeTransition(
             opacity: _fadeAnimation,
             child: CustomScrollView(
-              clipBehavior: Clip.none, 
+              clipBehavior: Clip.none,
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(child: _buildAppBar()),
@@ -90,14 +92,26 @@ class _HomeScreenState extends State<HomeScreen>
                       const SizedBox(height: 32),
                       _sectionLabel('Your Progress'),
                       const SizedBox(height: 14),
-                      _buildStatTile('Time Invested', '14.5 Hours',
-                          Icons.timer_outlined, Colors.greenAccent),
+                      _buildStatTile(
+                        'Time Invested',
+                        '14.5 Hours',
+                        Icons.timer_outlined,
+                        Colors.greenAccent,
+                      ),
                       const SizedBox(height: 10),
-                      _buildStatTile('Logic Mastery', '42 Solved',
-                          Icons.verified_outlined, _indigoLight),
+                      _buildStatTile(
+                        'Logic Mastery',
+                        '42 Solved',
+                        Icons.verified_outlined,
+                        _indigoLight,
+                      ),
                       const SizedBox(height: 10),
-                      _buildStatTile('Complexity Rank', 'Level 4 Scholar',
-                          Icons.trending_up, _orange),
+                      _buildStatTile(
+                        'Complexity Rank',
+                        'Level 4 Scholar',
+                        Icons.trending_up,
+                        _orange,
+                      ),
                       const SizedBox(height: 28),
                       _buildSignOut(),
                     ]),
@@ -108,10 +122,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
 
           // ── Bottom nav (only BackdropFilter here — not scrolling) ─
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _buildBottomNav(),
-          ),
+          Align(alignment: Alignment.bottomCenter, child: _buildBottomNav()),
         ],
       ),
     );
@@ -124,10 +135,12 @@ class _HomeScreenState extends State<HomeScreen>
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [
-          color.withValues(alpha: opacity),
-          Colors.transparent,
-        ]),
+        gradient: RadialGradient(
+          colors: [
+            color.withValues(alpha: opacity),
+            Colors.transparent,
+          ],
+        ),
       ),
     );
   }
@@ -156,11 +169,10 @@ class _HomeScreenState extends State<HomeScreen>
                   BoxShadow(
                     color: _indigo.withValues(alpha: 0.45),
                     blurRadius: 10,
-                  )
+                  ),
                 ],
               ),
-              child:
-                  const Icon(Icons.blur_on, color: Colors.white, size: 14),
+              child: const Icon(Icons.blur_on, color: Colors.white, size: 14),
             ),
             const SizedBox(width: 8),
             const Text(
@@ -220,10 +232,7 @@ class _HomeScreenState extends State<HomeScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            _indigo.withValues(alpha: 0.12),
-            _card,
-          ],
+          colors: [_indigo.withValues(alpha: 0.12), _card],
         ),
         boxShadow: [
           BoxShadow(
@@ -278,9 +287,7 @@ class _HomeScreenState extends State<HomeScreen>
               height: 46,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(23),
-                gradient: const LinearGradient(
-                  colors: [_indigoLight, _indigo],
-                ),
+                gradient: const LinearGradient(colors: [_indigoLight, _indigo]),
                 boxShadow: [
                   BoxShadow(
                     color: _indigo.withValues(alpha: 0.4),
@@ -301,8 +308,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                   SizedBox(width: 8),
-                  Icon(Icons.play_arrow_rounded,
-                      color: Colors.white, size: 18),
+                  Icon(Icons.play_arrow_rounded, color: Colors.white, size: 18),
                 ],
               ),
             ),
@@ -329,11 +335,12 @@ class _HomeScreenState extends State<HomeScreen>
             decoration: BoxDecoration(
               color: _indigo.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(15),
-              border:
-                  Border.all(color: _indigo.withValues(alpha: 0.2), width: 1),
+              border: Border.all(
+                color: _indigo.withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
-            child:
-                const Icon(Icons.call_split, color: _indigoLight, size: 26),
+            child: const Icon(Icons.call_split, color: _indigoLight, size: 26),
           ),
           const SizedBox(height: 14),
           const Text(
@@ -392,8 +399,9 @@ class _HomeScreenState extends State<HomeScreen>
               value: 0.64,
               minHeight: 5,
               backgroundColor: Colors.white.withValues(alpha: 0.07),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Colors.greenAccent,
+              ),
             ),
           ),
           const SizedBox(height: 18),
@@ -445,13 +453,14 @@ class _HomeScreenState extends State<HomeScreen>
         GestureDetector(
           onTap: () {},
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: _indigo.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: _indigo.withValues(alpha: 0.2), width: 1),
+                color: _indigo.withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
             child: const Text(
               'VIEW ALL',
@@ -489,71 +498,74 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildGridCard(
-      String title, String sub, IconData icon, Color color) {
-        return GestureDetector(
-    onTap: () => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CategoryDetailScreen(
-          categoryTitle: title,
-          accentColor: color,
+  Widget _buildGridCard(String title, String sub, IconData icon, Color color) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              CategoryDetailScreen(categoryTitle: title, accentColor: color),
         ),
       ),
-    ),
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _cardBorder, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(11),
-              border:
-                  Border.all(color: color.withValues(alpha: 0.18), width: 1),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _cardBorder, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: color.withValues(alpha: 0.18),
+                  width: 1,
+                ),
+              ),
+              child: Icon(icon, color: color, size: 19),
             ),
-            child: Icon(icon, color: color, size: 19),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                sub,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  fontSize: 11,
+                const SizedBox(height: 2),
+                Text(
+                  sub,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    fontSize: 11,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    )
-   );
+    );
   }
 
   // ─── Stat tile ────────────────────────────────────────────
   Widget _buildStatTile(
-      String title, String value, IconData icon, Color color) {
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
@@ -569,8 +581,10 @@ class _HomeScreenState extends State<HomeScreen>
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(13),
-              border:
-                  Border.all(color: color.withValues(alpha: 0.18), width: 1),
+              border: Border.all(
+                color: color.withValues(alpha: 0.18),
+                width: 1,
+              ),
             ),
             child: Icon(icon, color: color, size: 19),
           ),
@@ -600,8 +614,11 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           ),
           const Spacer(),
-          Icon(Icons.arrow_forward_ios,
-              color: Colors.white.withValues(alpha: 0.15), size: 13),
+          Icon(
+            Icons.arrow_forward_ios,
+            color: Colors.white.withValues(alpha: 0.15),
+            size: 13,
+          ),
         ],
       ),
     );
@@ -613,19 +630,16 @@ class _HomeScreenState extends State<HomeScreen>
       child: GestureDetector(
         onTap: () async {
           await FirebaseAuth.instance.signOut();
-          if (context.mounted) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const AuthWrapper()));
-          }
         },
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.redAccent.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: Colors.redAccent.withValues(alpha: 0.18), width: 1),
+              color: Colors.redAccent.withValues(alpha: 0.18),
+              width: 1,
+            ),
           ),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
@@ -648,117 +662,118 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildBottomNav() {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(20, 0, 20, 34),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(35),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-        child: Container(
-          height: 56,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(35),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 1,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 34),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(35),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(35),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1,
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.12),
+                  Colors.white.withValues(alpha: 0.04),
+                ],
+              ),
             ),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.white.withValues(alpha: 0.12),
-                Colors.white.withValues(alpha: 0.04),
-              ],
-            ),
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final itemWidth = constraints.maxWidth / 4;
-              return Stack(
-                children: [
-                  // ── Liquid glass sliding pill ──
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 350),
-                    curve: Curves.easeInOutCubic,
-                    left: _activeNav * itemWidth + 8,
-                    top: 8,
-                    bottom: 8,
-                    width: itemWidth - 16,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(25),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(25),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.white.withValues(alpha: 0.22),
-                                Colors.white.withValues(alpha: 0.08),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final itemWidth = constraints.maxWidth / 4;
+                return Stack(
+                  children: [
+                    // ── Liquid glass sliding pill ──
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeInOutCubic,
+                      left: _activeNav * itemWidth + 8,
+                      top: 8,
+                      bottom: 8,
+                      width: itemWidth - 16,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(25),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(25),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.22),
+                                  Colors.white.withValues(alpha: 0.08),
+                                ],
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
                               ],
                             ),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // ── Nav icons on top ──
-                  Row(
-                    children: [
-                      _navIcon(Icons.home_rounded, 0, itemWidth),
-                      _navIcon(Icons.search_rounded, 1, itemWidth),
-                      _navIcon(Icons.data_object, 2, itemWidth),
-                      _navIcon(Icons.settings_rounded, 3, itemWidth),
-                    ],
-                  ),
-                ],
-              );
-            },
+                    // ── Nav icons on top ──
+                    Row(
+                      children: [
+                        _navIcon(Icons.home_rounded, 0, itemWidth),
+                        _navIcon(Icons.search_rounded, 1, itemWidth),
+                        _navIcon(Icons.data_object, 2, itemWidth),
+                        _navIcon(Icons.settings_rounded, 3, itemWidth),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _navIcon(IconData icon, int index, double itemWidth) {
-  final isActive = _activeNav == index;
-  return GestureDetector(
-    onTap: () => setState(() => _activeNav = index),
-    child: SizedBox(
-      width: itemWidth,
-      height: 56,
-      child: Center(
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 250),
-          style: const TextStyle(),
-          child: Icon(
-            icon,
-            size: 26,
-            color: isActive
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.35),
+  Widget _navIcon(IconData icon, int index, double itemWidth) {
+    final isActive = _activeNav == index;
+    return GestureDetector(
+      onTap: () => setState(() => _activeNav = index),
+      child: SizedBox(
+        width: itemWidth,
+        height: 56,
+        child: Center(
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 250),
+            style: const TextStyle(),
+            child: Icon(
+              icon,
+              size: 26,
+              color: isActive
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.35),
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   // ─── Helpers ──────────────────────────────────────────────
   Widget _sectionLabel(String text) {
     return Text(
@@ -792,3 +807,4 @@ Widget _navIcon(IconData icon, int index, double itemWidth) {
     );
   }
 }
+
