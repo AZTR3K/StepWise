@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../visualizer/visualizer_screen.dart';
 
 // ─── Data Models ───────────────────────────────────────────
 
@@ -304,7 +305,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen>
   static const _bg = Color(0xFF08080F);
   static const _card = Color(0xFF111118);
   static const _cardBorder = Color(0xFF1E1E2E);
-  static const _indigo = Color(0xFF4A6BFF);
   static const _indigoLight = Color(0xFF8E9BFF);
 
   @override
@@ -690,7 +690,12 @@ class _AlgorithmCardState extends State<_AlgorithmCard>
         position: _slideAnim,
         child: GestureDetector(
           onTap: () {
-            // Navigate to visualizer screen later
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VisualizerScreen(algorithmName: algo.name),
+              ),
+            );
           },
           child: Container(
             padding: const EdgeInsets.all(18),
