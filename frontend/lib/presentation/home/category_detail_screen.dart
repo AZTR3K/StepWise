@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../visualizer/visualizer_screen.dart';
+import '../visualizer/search_visualizer_screen.dart';
 
 // ─── Data Models ───────────────────────────────────────────
 
@@ -138,7 +139,7 @@ final Map<String, CategoryData> categoryDataMap = {
   ),
   'Searching': CategoryData(
     title: 'Searching',
-    subtitle: '8 Algorithms',
+    subtitle: '4 Algorithms',
     icon: Icons.search,
     accentColor: const Color(0xFFFF9500),
     algorithms: [
@@ -690,13 +691,18 @@ class _AlgorithmCardState extends State<_AlgorithmCard>
         position: _slideAnim,
         child: GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => VisualizerScreen(algorithmName: algo.name),
-              ),
-            );
-          },
+            final searchAlgorithms = {
+    'Linear Search', 'Binary Search', 'Jump Search', 'Exponential Search',
+  };
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => searchAlgorithms.contains(algo.name)
+          ? SearchVisualizerScreen(algorithmName: algo.name)
+          : VisualizerScreen(algorithmName: algo.name),
+    ),
+  );
+},
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
