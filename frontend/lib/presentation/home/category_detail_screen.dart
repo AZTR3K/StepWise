@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../visualizer/visualizer_screen.dart';
 import '../visualizer/search_visualizer_screen.dart';
+import '../theme/app_colors.dart';
+import '../widgets/glass_panel.dart';
 
 // ─── Data Models ───────────────────────────────────────────
 
@@ -303,10 +305,8 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen>
   late Animation<double> _fadeAnimation;
   String _filter = 'ALL';
 
-  static const _bg = Color(0xFF08080F);
-  static const _card = Color(0xFF111118);
-  static const _cardBorder = Color(0xFF1E1E2E);
-  static const _indigoLight = Color(0xFF8E9BFF);
+  static const _bg = AppColors.background;
+  static const _indigoLight = AppColors.indigoLight;
 
   @override
   void initState() {
@@ -492,21 +492,11 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen>
     final overallProgress =
         data.algorithms.fold(0.0, (sum, a) => sum + a.progress) / total;
 
-    return Container(
+    return GlassPanel(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _cardBorder, width: 1),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            widget.accentColor.withValues(alpha: 0.08),
-            _card,
-          ],
-        ),
-      ),
+      borderRadius: 20,
+      alpha: 0.05,
+      glowColor: widget.accentColor,
       child: Column(
         children: [
           Row(
@@ -650,9 +640,6 @@ class _AlgorithmCardState extends State<_AlgorithmCard>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  static const _card = Color(0xFF111118);
-  static const _cardBorder = Color(0xFF1E1E2E);
-
   @override
   void initState() {
     super.initState();
@@ -703,18 +690,11 @@ class _AlgorithmCardState extends State<_AlgorithmCard>
     ),
   );
 },
-          child: Container(
+          child: GlassPanel(
             padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _card,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isCompleted
-                    ? Colors.greenAccent.withValues(alpha: 0.2)
-                    : _cardBorder,
-                width: 1,
-              ),
-            ),
+            borderRadius: 20,
+            glowColor: isCompleted ? Colors.greenAccent : null,
+            alpha: isCompleted ? 0.08 : 0.05,
             child: Row(
               children: [
                 // Animated icon container

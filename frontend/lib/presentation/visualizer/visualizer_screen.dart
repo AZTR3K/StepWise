@@ -7,6 +7,8 @@ import '../../domain/engines/heap_sort_engine.dart';
 import '../../domain/engines/insertion_sort_engine.dart';
 import '../../domain/engines/selection_sort_engine.dart';
 import '../../domain/models/step_state.dart';
+import '../theme/app_colors.dart';
+import '../widgets/glass_panel.dart';
 
 // ─── Pseudocode definitions per algorithm ───────────────────────────────────
 const _pseudoCodeMap = {
@@ -96,11 +98,10 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
 
   static const _initialArray = [45, 20, 85, 12, 60, 35, 90, 25];
 
-  static const _bg = Color(0xFF08080F);
-  static const _card = Color(0xFF111118);
-  static const _indigo = Color(0xFF4A6BFF);
-  static const _indigoLight = Color(0xFF8E9BFF);
-  static const _orange = Color(0xFFFF9500);
+  static const _bg = AppColors.background;
+  static const _indigo = AppColors.indigo;
+  static const _indigoLight = AppColors.indigoLight;
+  static const _orange = AppColors.orange;
 
   @override
   void initState() {
@@ -178,15 +179,12 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
           Column(
             children: [
               // ── Pseudo-Code Panel ──────────────────────────────────────────
-              Container(
-                margin: const EdgeInsets.all(20),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _card,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                ),
-                child: Column(
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: GlassPanel(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 16,
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: _pseudoCode.asMap().entries.map((entry) {
                     final isActive = entry.key == currentState.activeCodeLine;
@@ -212,6 +210,7 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
                   }).toList(),
                 ),
               ),
+            ),
 
               // ── Array Canvas ───────────────────────────────────────────────
               Expanded(

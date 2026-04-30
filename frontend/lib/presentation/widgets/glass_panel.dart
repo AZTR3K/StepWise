@@ -49,6 +49,8 @@ class GlassPanel extends StatelessWidget {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
               child: Container(
+                width: width,
+                height: height,
                 padding: padding,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: alpha),

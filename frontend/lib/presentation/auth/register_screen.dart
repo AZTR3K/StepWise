@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'auth_components.dart';
+import '../theme/app_colors.dart';
+import '../widgets/glass_panel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -61,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF08080F),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           Positioned(
@@ -74,7 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF4A6BFF).withValues(alpha: .1),
+                    AppColors.indigo.withValues(alpha: .1),
                     Colors.transparent,
                   ],
                 ),
@@ -91,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF8E9BFF).withValues(alpha: .07),
+                    AppColors.indigoLight.withValues(alpha: .07),
                     Colors.transparent,
                   ],
                 ),
@@ -127,10 +129,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF9500).withValues(alpha: .1),
+                          color: AppColors.orange.withValues(alpha: .1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color(0xFFFF9500).withValues(alpha: .25),
+                            color: AppColors.orange.withValues(alpha: .25),
                             width: 1,
                           ),
                         ),
@@ -138,12 +140,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.circle,
-                                color: Color(0xFFFF9500), size: 6),
+                                color: AppColors.orange, size: 6),
                             SizedBox(width: 6),
                             Text(
                               'INITIALIZE PROTOCOL',
                               style: TextStyle(
-                                color: Color(0xFFFF9500),
+                                color: AppColors.orange,
                                 fontSize: 9,
                                 letterSpacing: 2,
                                 fontWeight: FontWeight.w600,
@@ -171,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                             TextSpan(
                               text: 'Account',
                               style: TextStyle(
-                                color: Color(0xFF8E9BFF),
+                                color: AppColors.indigoLight,
                                 fontSize: 44,
                                 fontWeight: FontWeight.w800,
                                 height: 1.05,
@@ -193,7 +195,9 @@ class _RegisterScreenState extends State<RegisterScreen>
 
                       const SizedBox(height: 36),
 
-                      GlassCard(
+                      GlassPanel(
+                        padding: const EdgeInsets.all(24),
+                        borderRadius: 24,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -249,11 +253,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5),
                                       color: _termsAccepted
-                                          ? const Color(0xFF6B7FFF)
+                                          ? AppColors.indigoLight
                                           : Colors.white.withValues(alpha: .05),
                                       border: Border.all(
                                         color: _termsAccepted
-                                            ? const Color(0xFF6B7FFF)
+                                            ? AppColors.indigoLight
                                             : Colors.white.withValues(alpha: .15),
                                         width: 1.5,
                                       ),
@@ -279,11 +283,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           TextSpan(
                                             text: 'Protocol Terms',
                                             style: TextStyle(
-                                              color: Color(0xFF8E9BFF),
+                                              color: AppColors.indigoLight,
                                               decoration:
                                                   TextDecoration.underline,
                                               decorationColor:
-                                                  Color(0xFF8E9BFF),
+                                                  AppColors.indigoLight,
                                             ),
                                           ),
                                           TextSpan(
@@ -314,7 +318,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(e.message ?? 'Registration failed'),
-                                    backgroundColor: Colors.redAccent,
+                                    backgroundColor: AppColors.red,
                                   ),
                                 );
                               }
@@ -342,7 +346,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         child: const Text(
                                           'Sign In',
                                           style: TextStyle(
-                                            color: Color(0xFF8E9BFF),
+                                            color: AppColors.indigoLight,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                           ),

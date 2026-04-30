@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'auth_components.dart';
+import '../theme/app_colors.dart';
+import '../widgets/glass_panel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -58,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF08080F),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           Positioned(
@@ -71,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF6B7FFF).withValues(alpha: .12),
+                    AppColors.indigoLight.withValues(alpha: .12),
                     Colors.transparent,
                   ],
                 ),
@@ -88,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF8E9BFF).withValues(alpha: .08),
+                    AppColors.indigo.withValues(alpha: .08),
                     Colors.transparent,
                   ],
                 ),
@@ -118,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen>
                           letterSpacing: -1.5,
                           shadows: [
                             Shadow(
-                              color: const Color(0xFF6B7FFF).withValues(alpha: .3),
+                              color: AppColors.indigoLight.withValues(alpha: .3),
                               blurRadius: 20,
                             ),
                           ],
@@ -128,14 +130,16 @@ class _LoginScreenState extends State<LoginScreen>
                       const Text(
                         'ENTER YOUR CREDENTIALS TO CONTINUE',
                         style: TextStyle(
-                          color: Color(0xFF8E9BFF),
+                          color: AppColors.indigoLight,
                           fontSize: 10,
                           letterSpacing: 2.5,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 40),
-                      GlassCard(
+                      GlassPanel(
+                        padding: const EdgeInsets.all(24),
+                        borderRadius: 24,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -181,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: const Text(
                                   'FORGOTTEN ACCESS CIPHER?',
                                   style: TextStyle(
-                                    color: Color(0xFF8E9BFF),
+                                    color: AppColors.indigoLight,
                                     fontSize: 9,
                                     letterSpacing: 1.5,
                                     fontWeight: FontWeight.w500,
@@ -204,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(e.message ?? 'Login failed'),
-                                        backgroundColor: Colors.redAccent,
+                                        backgroundColor: AppColors.red,
                                       ),
                                     );
                                   }

@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'presentation/auth/auth_wrapper.dart';
-
+import 'presentation/theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,14 +22,8 @@ class StepWiseApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       showSemanticsDebugger: false,
       themeMode: ThemeMode.dark,
-      darkTheme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF4A6BFF),
-          secondary: Colors.orangeAccent,
-          surface: Color(0xFF181818),
-        ),
-      ),
+      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.darkTheme,
       home: const AuthWrapper(),
     );
   }

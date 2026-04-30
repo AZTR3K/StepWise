@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_colors.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import '../home/home_screen.dart';
@@ -22,10 +23,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // Still connecting to Firebase
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            backgroundColor: Color(0xFF08080F),
+            backgroundColor: AppColors.background,
             body: Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF6B7FFF),
+                color: AppColors.indigoLight,
               ),
             ),
           );

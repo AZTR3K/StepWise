@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frontend/presentation/home/category_detail_screen.dart';
+import '../theme/app_colors.dart';
+import '../widgets/glass_panel.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,12 +39,10 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // ─── Colours ───────────────────────────────────────────────
-  static const _bg = Color(0xFF08080F);
-  static const _card = Color(0xFF111118);
-  static const _cardBorder = Color(0xFF1E1E2E);
-  static const _indigo = Color(0xFF4A6BFF);
-  static const _indigoLight = Color(0xFF8E9BFF);
-  static const _orange = Color(0xFFFF9500);
+  static const _bg = AppColors.background;
+  static const _indigo = AppColors.indigo;
+  static const _indigoLight = AppColors.indigoLight;
+  static const _orange = AppColors.orange;
 
   @override
   Widget build(BuildContext context) {
@@ -222,25 +222,11 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ─── Featured card ────────────────────────────────────────
   Widget _buildFeaturedCard() {
-    return Container(
+    return GlassPanel(
       padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        color: _card,
-        border: Border.all(color: _indigo.withValues(alpha: 0.25), width: 1),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_indigo.withValues(alpha: 0.12), _card],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _indigo.withValues(alpha: 0.08),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      borderRadius: 26,
+      alpha: 0.05,
+      glowColor: _indigo,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -319,13 +305,9 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ─── Continue learning ────────────────────────────────────
   Widget _buildContinueLearningCard() {
-    return Container(
+    return GlassPanel(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _cardBorder, width: 1),
-      ),
+      borderRadius: 22,
       child: Column(
         children: [
           Container(
@@ -506,13 +488,11 @@ class _HomeScreenState extends State<HomeScreen>
               CategoryDetailScreen(categoryTitle: title, accentColor: color),
         ),
       ),
-      child: Container(
+      child: GlassPanel(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _card,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _cardBorder, width: 1),
-        ),
+        borderRadius: 18,
+        width: double.infinity,
+        height: double.infinity,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -565,13 +545,9 @@ class _HomeScreenState extends State<HomeScreen>
     IconData icon,
     Color color,
   ) {
-    return Container(
+    return GlassPanel(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _cardBorder, width: 1),
-      ),
+      borderRadius: 16,
       child: Row(
         children: [
           Container(
@@ -663,29 +639,12 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildBottomNav() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 34),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(35),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(35),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
-                width: 1,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withValues(alpha: 0.12),
-                  Colors.white.withValues(alpha: 0.04),
-                ],
-              ),
-            ),
-            child: LayoutBuilder(
+      child: GlassPanel(
+        borderRadius: 35,
+        padding: EdgeInsets.zero,
+        height: 56,
+        alpha: 0.08,
+        child: LayoutBuilder(
               builder: (context, constraints) {
                 final itemWidth = constraints.maxWidth / 4;
                 return Stack(
@@ -743,8 +702,6 @@ class _HomeScreenState extends State<HomeScreen>
                 );
               },
             ),
-          ),
-        ),
       ),
     );
   }

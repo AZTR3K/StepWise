@@ -5,6 +5,8 @@ import '../../domain/engines/binary_search_engine.dart';
 import '../../domain/engines/jump_search_engine.dart';
 import '../../domain/engines/exponential_search_engine.dart';
 import '../../domain/models/search_step_state.dart';
+import '../theme/app_colors.dart';
+import '../widgets/glass_panel.dart';
 
 // ─── Pseudocode map ───────────────────────────────────────────────────────────
 const _pseudoCodeMap = {
@@ -75,13 +77,12 @@ class SearchVisualizerScreen extends StatefulWidget {
 
 class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   // ─── Colours ────────────────────────────────────────────────────────────────
-  static const _bg         = Color(0xFF08080F);
-  static const _card        = Color(0xFF111118);
-  static const _indigo      = Color(0xFF4A6BFF);
-  static const _indigoLight = Color(0xFF8E9BFF);
-  static const _orange      = Color(0xFFFF9500);
-  static const _green       = Color(0xFF30D158);
-  static const _red         = Color(0xFFFF453A);
+  static const _bg         = AppColors.background;
+  static const _indigo      = AppColors.indigo;
+  static const _indigoLight = AppColors.indigoLight;
+  static const _orange      = AppColors.orange;
+  static const _green       = Colors.greenAccent;
+  static const _red         = Colors.redAccent;
 
   List<SearchStepState>? _steps;
   int _currentStepIndex = 0;
@@ -110,7 +111,7 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
       context: context,
       barrierDismissible: !isReset && _steps != null ? true : false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _card,
+        backgroundColor: AppColors.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Enter Target Value',
@@ -293,15 +294,12 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
             const SizedBox(height: 12),
 
             // ── Pseudocode Panel ──────────────────────────────────────────────
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: _card,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Column(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GlassPanel(
+                padding: const EdgeInsets.all(14),
+                borderRadius: 16,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: _pseudoCode.asMap().entries.map((entry) {
                   final isActive = entry.key == step.activeCodeLine;
@@ -325,6 +323,7 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
                 }).toList(),
               ),
             ),
+          ),
 
             // ── Array Canvas ──────────────────────────────────────────────────
             Expanded(

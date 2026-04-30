@@ -1,44 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
+import '../widgets/glass_panel.dart';
 
-class GlassCard extends StatelessWidget {
-  final Widget child;
-
-  const GlassCard({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.07),
-                Colors.white.withValues(alpha: 0.02),
-              ],
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class GlassInputField extends StatelessWidget {
+class GlassInputField extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
   final IconData prefixIcon;
@@ -57,53 +21,62 @@ class GlassInputField extends StatelessWidget {
   });
 
   @override
+  State<GlassInputField> createState() => _GlassInputFieldState();
+}
+
+class _GlassInputFieldState extends State<GlassInputField> {
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+    return AnimatedScale(
+      scale: _isFocused ? 1.02 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutBack,
+      child: GlassPanel(
+        padding: EdgeInsets.zero,
+        borderRadius: 14,
+        alpha: _isFocused ? 0.08 : 0.04,
+        glowColor: _isFocused ? AppColors.indigo : null,
         child: TextField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
+          controller: widget.controller,
+          focusNode: _focusNode,
+          obscureText: widget.obscureText,
+          keyboardType: widget.keyboardType,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 14,
             fontWeight: FontWeight.w400,
           ),
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: widget.hint,
             hintStyle: TextStyle(
               color: Colors.white.withValues(alpha: 0.25),
               fontSize: 14,
             ),
-            prefixIcon: Icon(prefixIcon, color: Colors.white38, size: 18),
-            suffixIcon: suffixIcon,
+            prefixIcon: Icon(widget.prefixIcon, color: _isFocused ? AppColors.indigoLight : Colors.white38, size: 18),
+            suffixIcon: widget.suffixIcon,
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.06),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.1),
-                width: 1,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.1),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(
-                color: Color(0xFF6B7FFF),
-                width: 1.5,
-              ),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            fillColor: Colors.transparent,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ),
@@ -111,7 +84,7 @@ class GlassInputField extends StatelessWidget {
   }
 }
 
-class GradientButton extends StatelessWidget {
+class GradientButton extends StatefulWidget {
   final String label;
   final IconData icon;
   final VoidCallback? onPressed;
@@ -124,47 +97,62 @@ class GradientButton extends StatelessWidget {
   });
 
   @override
+  State<GradientButton> createState() => _GradientButtonState();
+}
+
+class _GradientButtonState extends State<GradientButton> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    final isEnabled = onPressed != null;
+    final isEnabled = widget.onPressed != null;
     return GestureDetector(
-      onTap: onPressed,
-      child: AnimatedOpacity(
-        opacity: isEnabled ? 1.0 : 0.45,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          width: double.infinity,
-          height: 54,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(27),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8E9BFF), Color(0xFF4A6BFF)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF6B7FFF).withValues(alpha: 0.35),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-                spreadRadius: -2,
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onPressed,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutQuart,
+        child: AnimatedOpacity(
+          opacity: isEnabled ? 1.0 : 0.45,
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            width: double.infinity,
+            height: 54,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(27),
+              gradient: const LinearGradient(
+                colors: [AppColors.indigoLight, AppColors.indigo],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.indigo.withValues(alpha: _isPressed ? 0.15 : 0.35),
+                  blurRadius: _isPressed ? 10 : 20,
+                  offset: Offset(0, _isPressed ? 4 : 8),
+                  spreadRadius: -2,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(icon, color: Colors.white, size: 18),
-            ],
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  widget.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(widget.icon, color: Colors.white, size: 18),
+              ],
+            ),
           ),
         ),
       ),
@@ -172,7 +160,7 @@ class GradientButton extends StatelessWidget {
   }
 }
 
-class SocialButton extends StatelessWidget {
+class SocialButton extends StatefulWidget {
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
@@ -185,38 +173,40 @@ class SocialButton extends StatelessWidget {
   });
 
   @override
+  State<SocialButton> createState() => _SocialButtonState();
+}
+
+class _SocialButtonState extends State<SocialButton> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onPressed,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.1),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white60, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onPressed,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: GlassPanel(
+          padding: EdgeInsets.zero,
+          borderRadius: 16,
+          height: 56,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, color: Colors.white60, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -238,39 +228,26 @@ class BottomTabSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1,
-            ),
+    return GlassPanel(
+      padding: const EdgeInsets.all(5),
+      borderRadius: 30,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildTab(
+            icon: Icons.login,
+            label: 'LOGIN',
+            isActive: activeTab == 0,
+            onTap: onLoginTap,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTab(
-                icon: Icons.login,
-                label: 'LOGIN',
-                isActive: activeTab == 0,
-                onTap: onLoginTap,
-              ),
-              const SizedBox(width: 4),
-              _buildTab(
-                icon: Icons.person_add_outlined,
-                label: 'REGISTER',
-                isActive: activeTab == 1,
-                onTap: onRegisterTap,
-              ),
-            ],
+          const SizedBox(width: 4),
+          _buildTab(
+            icon: Icons.person_add_outlined,
+            label: 'REGISTER',
+            isActive: activeTab == 1,
+            onTap: onRegisterTap,
           ),
-        ),
+        ],
       ),
     );
   }
@@ -289,11 +266,11 @@ class BottomTabSwitcher extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
-          color: isActive ? const Color(0xFF4A6BFF) : Colors.transparent,
+          color: isActive ? AppColors.indigo : Colors.transparent,
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: const Color(0xFF6B7FFF).withValues(alpha: 0.4),
+                    color: AppColors.indigoLight.withValues(alpha: 0.4),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   )
@@ -324,7 +301,6 @@ class BottomTabSwitcher extends StatelessWidget {
   }
 }
 
-// Shared logo widget
 class StepWiseLogo extends StatelessWidget {
   const StepWiseLogo({super.key});
 
@@ -338,13 +314,13 @@ class StepWiseLogo extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: const LinearGradient(
-              colors: [Color(0xFF8E9BFF), Color(0xFF4A6BFF)],
+              colors: [AppColors.indigoLight, AppColors.indigo],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6B7FFF).withValues(alpha: 0.4),
+                color: AppColors.indigoLight.withValues(alpha: 0.4),
                 blurRadius: 12,
                 spreadRadius: 1,
               ),
@@ -367,7 +343,6 @@ class StepWiseLogo extends StatelessWidget {
   }
 }
 
-// Shared field label
 class FieldLabel extends StatelessWidget {
   final String label;
 
@@ -378,7 +353,7 @@ class FieldLabel extends StatelessWidget {
     return Text(
       label,
       style: const TextStyle(
-        color: Color(0xFF8E9BFF),
+        color: AppColors.indigoLight,
         fontSize: 10,
         letterSpacing: 2,
         fontWeight: FontWeight.w600,
