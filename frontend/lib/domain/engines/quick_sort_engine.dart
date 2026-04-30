@@ -9,7 +9,7 @@ class QuickSortEngine {
 
     _quickSort(arr, 0, arr.length - 1, history);
 
-    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 6));
+    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 7));
     return history;
   }
 
@@ -30,7 +30,7 @@ class QuickSortEngine {
       activeIndexA: high,
       activeIndexB: null,
       isSwap: false,
-      activeCodeLine: 1, // "choose pivot"
+      activeCodeLine: 2, // "choose pivot"
     ));
 
     int i = low - 1;
@@ -42,7 +42,7 @@ class QuickSortEngine {
         activeIndexA: j,
         activeIndexB: high,
         isSwap: false,
-        activeCodeLine: 3, // "if arr[j] <= pivot"
+        activeCodeLine: 4, // "if arr[j] <= pivot"
       ));
 
       if (arr[j] <= pivot) {
@@ -57,7 +57,7 @@ class QuickSortEngine {
           activeIndexA: i,
           activeIndexB: j,
           isSwap: true,
-          activeCodeLine: 4, // "swap arr[i] and arr[j]"
+          activeCodeLine: 5, // "swap arr[i] and arr[j]"
         ));
       }
     }
@@ -72,7 +72,7 @@ class QuickSortEngine {
       activeIndexA: i + 1,
       activeIndexB: high,
       isSwap: true,
-      activeCodeLine: 5, // "place pivot"
+      activeCodeLine: 6, // "place pivot"
     ));
 
     return i + 1;

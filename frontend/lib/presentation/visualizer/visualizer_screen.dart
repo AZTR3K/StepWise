@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart' hide StepState;
 import '../../domain/engines/bubble_sort_engine.dart';
 import '../../domain/engines/merge_sort_engine.dart';
@@ -9,58 +8,71 @@ import '../../domain/engines/selection_sort_engine.dart';
 import '../../domain/models/step_state.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
+import '../widgets/base_visualizer_control.dart';
 
 // ─── Pseudocode definitions per algorithm ───────────────────────────────────
 const _pseudoCodeMap = {
   'Bubble Sort': [
-    "1. for i = 0 to n-1",
-    "2.   for j = 0 to n-i-1",
-    "3.     if arr[j] > arr[j+1]",
-    "4.       swap(arr[j], arr[j+1])",
-    "5. Array is sorted",
+    "function bubbleSort(arr) {",
+    "  for (i = 0; i < n-1; i++)",
+    "    swapped = false",
+    "    for (j = 0; j < n-i-1; j++)",
+    "      if arr[j] > arr[j+1]",
+    "        swap(arr[j], arr[j+1])",
+    "        swapped = true",
+    "    if (!swapped) break",
+    "}",
   ],
   'Merge Sort': [
-    "1. if length <= 1: return",
-    "2.   mid = length / 2",
-    "3.   mergeSort(left half)",
-    "4.     compare left[i] and right[j]",
-    "5.     place smaller into result",
-    "6.   mergeSort(right half)",
-    "7. Array is sorted",
+    "function mergeSort(arr, l, r) {",
+    "  if l >= r return",
+    "  mid = (l + r) / 2",
+    "  mergeSort(arr, l, mid)",
+    "  mergeSort(arr, mid + 1, r)",
+    "  merge(arr, l, mid, r)",
+    "}",
+    "function merge(arr, l, m, r) {",
+    "  compare left[i] and right[j]",
+    "  place smaller into arr[k]",
+    "}",
   ],
   'Quick Sort': [
-    "1. if low < high",
-    "2.   pivot = arr[high]",
-    "3.   i = low - 1",
-    "4.   if arr[j] <= pivot",
-    "5.     swap arr[i] and arr[j]",
-    "6.   place pivot at i+1",
-    "7. Array is sorted",
+    "function quickSort(arr, low, high) {",
+    "  if low < high",
+    "    pivot = arr[high]",
+    "    i = low - 1",
+    "    if arr[j] <= pivot",
+    "      swap arr[i] and arr[j]",
+    "    place pivot at i+1",
+    "}",
   ],
   'Heap Sort': [
-    "1. build max-heap from array",
-    "2.   heapify: compare children",
-    "3.   swap if child > parent",
-    "4. swap root with last element",
-    "5. extract max, reduce heap",
-    "6. repeat until heap empty",
-    "7. Array is sorted",
+    "function heapSort(arr) {",
+    "  build max-heap from array",
+    "    heapify: compare children",
+    "    swap if child > parent",
+    "  swap root with last element",
+    "  extract max, reduce heap",
+    "  repeat until heap empty",
+    "}",
   ],
   'Insertion Sort': [
-    "1. for i = 1 to n-1",
-    "2.   key = arr[i]",
-    "3.   compare key with sorted portion",
-    "4.   shift elements right",
-    "5.   insert key at correct position",
-    "6. Array is sorted",
+    "function insertionSort(arr) {",
+    "  for i = 1 to arr.length - 1",
+    "    key = arr[i]",
+    "    compare key with sorted portion",
+    "    shift elements right",
+    "    insert key at correct position",
+    "}",
   ],
   'Selection Sort': [
-    "1. for i = 0 to n-2",
-    "2.   assume arr[i] is minimum",
-    "3.   find minimum in unsorted portion",
-    "4.   swap with first unsorted element",
-    "5.   place minimum at position i",
-    "6. Array is sorted",
+    "function selectionSort(arr) {",
+    "  for i = 0 to arr.length - 2",
+    "    assume arr[i] is minimum",
+    "    find minimum in unsorted portion",
+    "    swap with first unsorted element",
+    "    place minimum at position i",
+    "}",
   ],
 };
 
@@ -97,6 +109,7 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
   bool _isPlaying = false;
 
   static const _initialArray = [45, 20, 85, 12, 60, 35, 90, 25];
+  late List<int> _currentArray;
 
   static const _bg = AppColors.background;
   static const _indigo = AppColors.indigo;
@@ -106,7 +119,28 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
   @override
   void initState() {
     super.initState();
-    _steps = _generateSteps(widget.algorithmName, _initialArray);
+    _currentArray = List.from(_initialArray);
+    _steps = _generateSteps(widget.algorithmName, _currentArray);
+  }
+
+  void _handleArrayUpdate(List<int> newArray) {
+    if (_isPlaying) {
+      setState(() => _isPlaying = false);
+    }
+    setState(() {
+      _currentArray = newArray;
+      _steps = _generateSteps(widget.algorithmName, _currentArray);
+      _currentStepIndex = 0;
+    });
+  }
+
+  void _restart() {
+    if (_isPlaying) {
+      setState(() => _isPlaying = false);
+    }
+    setState(() {
+      _currentStepIndex = 0;
+    });
   }
 
   List<String> get _pseudoCode =>
@@ -144,6 +178,7 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
     final maxVal = currentState.arraySnapshot.reduce((a, b) => a > b ? a : b);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -157,8 +192,9 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
           style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
         ),
       ),
-      body: Stack(
-        children: [
+      body: SafeArea(
+        child: Stack(
+          children: [
           // Ambient glow
           Positioned(
             top: -50,
@@ -179,172 +215,178 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
           Column(
             children: [
               // ── Pseudo-Code Panel ──────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: GlassPanel(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 16,
-                  child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _pseudoCode.asMap().entries.map((entry) {
-                    final isActive = entry.key == currentState.activeCodeLine;
-                    return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? _indigo.withValues(alpha: 0.2)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        entry.value,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          color: isActive ? _indigoLight : Colors.white54,
-                          fontWeight:
-                              isActive ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-              // ── Array Canvas ───────────────────────────────────────────────
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: currentState.arraySnapshot.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final value = entry.value;
-                        final isActive = index == currentState.activeIndexA ||
-                            index == currentState.activeIndexB;
-
-                        Color barColor = Colors.white24;
-                        if (isActive) {
-                          barColor = currentState.isSwap
-                              ? Colors.greenAccent
-                              : _orange;
-                        }
-
-                        final heightRatio = value / maxVal;
-
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              value.toString(),
+              Flexible(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: GlassPanel(
+                    padding: const EdgeInsets.all(16),
+                    borderRadius: 16,
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _pseudoCode.asMap().entries.map((entry) {
+                          final isActive = entry.key == currentState.activeCodeLine;
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? _indigo.withValues(alpha: 0.2)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              entry.value,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: isActive ? Colors.white : Colors.white54,
-                                fontWeight: FontWeight.bold,
+                                fontFamily: 'monospace',
                                 fontSize: 12,
+                                color: isActive ? _indigoLight : Colors.white54,
+                                fontWeight:
+                                    isActive ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                              width: 24,
-                              height: 200 * heightRatio,
-                              decoration: BoxDecoration(
-                                color: barColor,
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(6)),
-                                boxShadow: isActive
-                                    ? [
-                                        BoxShadow(
-                                          color: barColor.withValues(alpha: 0.5),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, -2),
-                                        )
-                                      ]
-                                    : [],
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),
               ),
 
-              // ── Playback Controls ──────────────────────────────────────────
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(
-                    padding: const EdgeInsets.only(bottom: 40, top: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      border: Border(
-                          top: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.1))),
-                    ),
+              // ── Array Canvas ───────────────────────────────────────────────
+              Flexible(
+                flex: 4,
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ClipRect(
+                      clipBehavior: Clip.hardEdge,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final len = currentState.arraySnapshot.length;
+                          final availableWidth = constraints.maxWidth;
+                          double barWidth = (availableWidth / len) * 0.8;
+                          if (barWidth > 40) barWidth = 40;
+                          if (barWidth < 2) barWidth = 2;
+                          final showText = barWidth > 16;
+                          final textSpace = showText ? 24.0 : 0.0;
+                          double maxBarHeight = (constraints.maxHeight - textSpace - 12.0).clamp(0.0, constraints.maxHeight);
+
+                          return SizedBox(
+                            height: constraints.maxHeight,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: currentState.arraySnapshot.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final value = entry.value;
+                                final isActive = index == currentState.activeIndexA ||
+                                    index == currentState.activeIndexB;
+
+                                Color barColor = Colors.white24;
+                                if (isActive) {
+                                  barColor = currentState.isSwap
+                                      ? Colors.greenAccent
+                                      : _orange;
+                                }
+
+                                final heightRatio = value / (maxVal > 0 ? maxVal : 1);
+
+                                return SingleChildScrollView(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (showText)
+                                        Text(
+                                          value.toString(),
+                                          style: TextStyle(
+                                            color: isActive ? Colors.white : Colors.white54,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      if (showText) const SizedBox(height: 8),
+                                      AnimatedContainer(
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                        width: barWidth,
+                                        height: maxBarHeight * heightRatio,
+                                        decoration: BoxDecoration(
+                                          color: barColor,
+                                          borderRadius: const BorderRadius.vertical(
+                                              top: Radius.circular(6)),
+                                          boxShadow: isActive
+                                              ? [
+                                                  BoxShadow(
+                                                    color: barColor.withValues(alpha: 0.5),
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, -2),
+                                                  )
+                                                ]
+                                              : [],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
+                      ),
+                  ),
+                ),
+              ),
+
+              // ── Result Banner ──────────────────────────────────────────────
+              if (_currentStepIndex == _steps.length - 1)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                  child: GlassPanel(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    borderRadius: 14,
+                    glowColor: Colors.greenAccent,
+                    alpha: 0.15,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          onPressed:
-                              _currentStepIndex > 0 ? _prevStep : null,
-                          icon: Icon(Icons.skip_previous,
-                              color: _currentStepIndex > 0
-                                  ? Colors.white
-                                  : Colors.white24,
-                              size: 32),
-                        ),
-                        const SizedBox(width: 20),
-                        GestureDetector(
-                          onTap: _togglePlay,
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [_indigoLight, _indigo],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _indigo.withValues(alpha: 0.4),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                )
-                              ],
-                            ),
-                            child: Icon(
-                              _isPlaying ? Icons.pause : Icons.play_arrow,
-                              color: Colors.white,
-                              size: 32,
-                            ),
+                      children: const [
+                        Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Array Sorted',
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
                           ),
-                        ),
-                        const SizedBox(width: 20),
-                        IconButton(
-                          onPressed: _currentStepIndex < _steps.length - 1
-                              ? _nextStep
-                              : null,
-                          icon: Icon(Icons.skip_next,
-                              color: _currentStepIndex < _steps.length - 1
-                                  ? Colors.white
-                                  : Colors.white24,
-                              size: 32),
                         ),
                       ],
                     ),
                   ),
                 ),
+
+
+              // ── Playback Controls ──────────────────────────────────────────
+              BaseVisualizerControl(
+                isPlaying: _isPlaying,
+                canStepBack: _currentStepIndex > 0,
+                canStepForward: _currentStepIndex < _steps.length - 1,
+                onPlayPause: _togglePlay,
+                onStepBack: _prevStep,
+                onStepForward: _nextStep,
+                onRestart: _restart,
+                currentArray: _currentArray,
+                onArrayUpdated: _handleArrayUpdate,
               ),
             ],
-          ),
-        ],
-      ),
-    );
+          ),  // Column
+        ],   // Stack children
+        ),   // Stack
+      ),     // SafeArea
+    );       // Scaffold
   }
 }

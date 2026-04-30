@@ -21,7 +21,7 @@ class HeapSortEngine {
         activeIndexA: 0,
         activeIndexB: i,
         isSwap: false,
-        activeCodeLine: 3, // "swap root with last"
+        activeCodeLine: 4, // "swap root with last"
       ));
 
       int temp = arr[0];
@@ -33,13 +33,13 @@ class HeapSortEngine {
         activeIndexA: 0,
         activeIndexB: i,
         isSwap: true,
-        activeCodeLine: 4, // "extract max"
+        activeCodeLine: 5, // "extract max"
       ));
 
       _heapify(arr, i, 0, history);
     }
 
-    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 6));
+    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 7));
     return history;
   }
 
@@ -54,7 +54,7 @@ class HeapSortEngine {
         activeIndexA: largest,
         activeIndexB: left,
         isSwap: false,
-        activeCodeLine: 1, // "build max-heap"
+        activeCodeLine: 2, // "build max-heap"
       ));
       if (arr[left] > arr[largest]) largest = left;
     }
@@ -65,7 +65,7 @@ class HeapSortEngine {
         activeIndexA: largest,
         activeIndexB: right,
         isSwap: false,
-        activeCodeLine: 1,
+        activeCodeLine: 2,
       ));
       if (arr[right] > arr[largest]) largest = right;
     }
@@ -80,7 +80,7 @@ class HeapSortEngine {
         activeIndexA: i,
         activeIndexB: largest,
         isSwap: true,
-        activeCodeLine: 2, // "heapify down"
+        activeCodeLine: 3, // "heapify down"
       ));
 
       _heapify(arr, n, largest, history);

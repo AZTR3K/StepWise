@@ -17,7 +17,7 @@ class SelectionSortEngine {
         activeIndexA: i,
         activeIndexB: null,
         isSwap: false,
-        activeCodeLine: 1, // "assume arr[i] is minimum"
+        activeCodeLine: 2, // "assume arr[i] is minimum"
       ));
 
       for (int j = i + 1; j < n; j++) {
@@ -27,7 +27,7 @@ class SelectionSortEngine {
           activeIndexA: minIdx,
           activeIndexB: j,
           isSwap: false,
-          activeCodeLine: 2, // "find minimum in unsorted portion"
+          activeCodeLine: 3, // "find minimum in unsorted portion"
         ));
 
         if (arr[j] < arr[minIdx]) {
@@ -42,7 +42,7 @@ class SelectionSortEngine {
           activeIndexA: i,
           activeIndexB: minIdx,
           isSwap: false,
-          activeCodeLine: 3, // "swap with first unsorted"
+          activeCodeLine: 4, // "swap with first unsorted"
         ));
 
         int temp = arr[i];
@@ -54,12 +54,12 @@ class SelectionSortEngine {
           activeIndexA: i,
           activeIndexB: minIdx,
           isSwap: true,
-          activeCodeLine: 4, // "place minimum at position i"
+          activeCodeLine: 5, // "place minimum at position i"
         ));
       }
     }
 
-    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 5));
+    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 6));
     return history;
   }
 }

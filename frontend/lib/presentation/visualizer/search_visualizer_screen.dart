@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../domain/engines/linear_search_engine.dart';
 import '../../domain/engines/binary_search_engine.dart';
@@ -7,6 +6,7 @@ import '../../domain/engines/exponential_search_engine.dart';
 import '../../domain/models/search_step_state.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
+import '../widgets/base_visualizer_control.dart';
 
 // ─── Pseudocode map ───────────────────────────────────────────────────────────
 const _pseudoCodeMap = {
@@ -51,17 +51,17 @@ const _pseudoCodeMap = {
 // values the user might guess from the unsorted version shown for linear.
 const _baseArray = [34, 7, 23, 32, 5, 62, 12, 47];
 
-List<SearchStepState> _generateSteps(String name, int target) {
+List<SearchStepState> _generateSteps(String name, List<int> array, int target) {
   switch (name) {
     case 'Binary Search':
-      return BinarySearchEngine().generateSteps(_baseArray, target);
+      return BinarySearchEngine().generateSteps(array, target);
     case 'Jump Search':
-      return JumpSearchEngine().generateSteps(_baseArray, target);
+      return JumpSearchEngine().generateSteps(array, target);
     case 'Exponential Search':
-      return ExponentialSearchEngine().generateSteps(_baseArray, target);
+      return ExponentialSearchEngine().generateSteps(array, target);
     case 'Linear Search':
     default:
-      return LinearSearchEngine().generateSteps(_baseArray, target);
+      return LinearSearchEngine().generateSteps(array, target);
   }
 }
 
@@ -88,6 +88,7 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   int _currentStepIndex = 0;
   bool _isPlaying = false;
   int? _targetValue;
+  late List<int> _currentArray;
 
   List<String> get _pseudoCode =>
       _pseudoCodeMap[widget.algorithmName] ?? _pseudoCodeMap['Linear Search']!;
@@ -96,7 +97,30 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   @override
   void initState() {
     super.initState();
+    _currentArray = List.from(_baseArray);
     WidgetsBinding.instance.addPostFrameCallback((_) => _showTargetDialog());
+  }
+
+  void _handleArrayUpdate(List<int> newArray) {
+    if (_isPlaying) {
+      setState(() => _isPlaying = false);
+    }
+    setState(() {
+      _currentArray = newArray;
+      if (_targetValue != null) {
+        _steps = _generateSteps(widget.algorithmName, _currentArray, _targetValue!);
+        _currentStepIndex = 0;
+      }
+    });
+  }
+
+  void _restart() {
+    if (_isPlaying) {
+      setState(() => _isPlaying = false);
+    }
+    setState(() {
+      _currentStepIndex = 0;
+    });
   }
 
   Future<void> _showTargetDialog({bool isReset = false}) async {
@@ -104,7 +128,7 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
     final controller = TextEditingController();
 
     // Sort-aware hint: show what values are in the working array
-    final displayArray = List<int>.from(_baseArray);
+    final displayArray = List<int>.from(_currentArray);
     if (widget.algorithmName != 'Linear Search') displayArray.sort();
 
     await showDialog(
@@ -175,7 +199,7 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
     Navigator.pop(ctx);
     setState(() {
       _targetValue = value;
-      _steps = _generateSteps(widget.algorithmName, value);
+      _steps = _generateSteps(widget.algorithmName, _currentArray, value);
       _currentStepIndex = 0;
       _isPlaying = false;
     });
@@ -209,6 +233,7 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -242,8 +267,9 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
     final isFinished = step.stepType == SearchStepType.found ||
         step.stepType == SearchStepType.notFound;
 
-    return Stack(
-      children: [
+    return SafeArea(
+      child: Stack(
+        children: [
         // Ambient glow
         Positioned(
           top: -50, right: -50,
@@ -294,219 +320,203 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
             const SizedBox(height: 12),
 
             // ── Pseudocode Panel ──────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GlassPanel(
-                padding: const EdgeInsets.all(14),
-                borderRadius: 16,
-                child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _pseudoCode.asMap().entries.map((entry) {
-                  final isActive = entry.key == step.activeCodeLine;
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: isActive ? _indigo.withValues(alpha: 0.2) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(4),
+            Flexible(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GlassPanel(
+                  padding: const EdgeInsets.all(14),
+                  borderRadius: 16,
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _pseudoCode.asMap().entries.map((entry) {
+                        final isActive = entry.key == step.activeCodeLine;
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isActive ? _indigo.withValues(alpha: 0.2) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            entry.value,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              color: isActive ? _indigoLight : Colors.white54,
+                              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    child: Text(
-                      entry.value,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: isActive ? _indigoLight : Colors.white54,
-                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  );
-                }).toList(),
+                  ),
+                ),
               ),
             ),
-          ),
 
             // ── Array Canvas ──────────────────────────────────────────────────
-            Expanded(
+            Flexible(
+              flex: 4,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: step.array.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final val = entry.value;
-                    final heightRatio = val / maxVal;
+                child: ClipRect(
+                  clipBehavior: Clip.hardEdge,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final len = step.array.length;
+                      final availableWidth = constraints.maxWidth;
+                      double barWidth = (availableWidth / len) * 0.8;
+                      if (barWidth > 40) barWidth = 40;
+                      if (barWidth < 2) barWidth = 2;
+                      final showText = barWidth > 16;
+                      final showIndex = barWidth > 20;
 
-                    final isFound = idx == step.foundIndex;
-                    final isCurrent = idx == step.currentIndex && !isFound;
-                    final isJump = idx == step.jumpIndex && !isCurrent && !isFound;
-                    final inRange = step.rangeStart != null &&
-                        step.rangeEnd != null &&
-                        idx >= step.rangeStart! &&
-                        idx <= step.rangeEnd! &&
-                        !isCurrent &&
-                        !isFound &&
-                        !isJump;
+                      double textSpace = 0.0;
+                      if (showText) textSpace += 22.0;
+                      if (showIndex) textSpace += 16.0;
+                      double maxBarHeight = (constraints.maxHeight - textSpace - 12.0).clamp(0.0, constraints.maxHeight);
 
-                    Color barColor;
-                    if (isFound) {
-                      barColor = _green;
-                    } else if (isCurrent) {
-                      barColor = _orange;
-                    } else if (isJump) {
-                      barColor = _indigo;
-                    } else if (inRange) {
-                      barColor = _indigoLight.withValues(alpha: 0.5);
-                    } else {
-                      barColor = Colors.white.withValues(alpha: 0.15);
-                    }
+                      return SizedBox(
+                        height: constraints.maxHeight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: step.array.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final val = entry.value;
+                            final heightRatio = val / (maxVal > 0 ? maxVal : 1);
 
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Value label
-                        Text(
-                          val.toString(),
-                          style: TextStyle(
-                            color: (isFound || isCurrent || isJump)
-                                ? Colors.white
-                                : Colors.white38,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
+                            final isFound = idx == step.foundIndex;
+                            final isCurrent = idx == step.currentIndex && !isFound;
+                            final isJump = idx == step.jumpIndex && !isCurrent && !isFound;
+                            final inRange = step.rangeStart != null &&
+                                step.rangeEnd != null &&
+                                idx >= step.rangeStart! &&
+                                idx <= step.rangeEnd! &&
+                                !isCurrent &&
+                                !isFound &&
+                                !isJump;
+
+                            Color barColor;
+                            if (isFound) {
+                              barColor = _green;
+                            } else if (isCurrent) {
+                              barColor = _orange;
+                            } else if (isJump) {
+                              barColor = _indigo;
+                            } else if (inRange) {
+                              barColor = _indigoLight.withValues(alpha: 0.5);
+                            } else {
+                              barColor = Colors.white.withValues(alpha: 0.15);
+                            }
+
+                            return SingleChildScrollView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  if (showText)
+                                    Text(
+                                      val.toString(),
+                                      style: TextStyle(
+                                        color: (isFound || isCurrent || isJump)
+                                            ? Colors.white
+                                            : Colors.white38,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  if (showText) const SizedBox(height: 6),
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                    width: barWidth,
+                                    height: maxBarHeight * heightRatio,
+                                    decoration: BoxDecoration(
+                                      color: barColor,
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                                      boxShadow: (isFound || isCurrent || isJump)
+                                          ? [BoxShadow(color: barColor.withValues(alpha: 0.5), blurRadius: 12, offset: const Offset(0, -2))]
+                                          : [],
+                                    ),
+                                  ),
+                                  if (showIndex) const SizedBox(height: 4),
+                                  if (showIndex)
+                                    Text(
+                                      '[$idx]',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.25),
+                                        fontSize: 9,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
                         ),
-                        const SizedBox(height: 6),
-                        // Bar
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          width: 28,
-                          height: 180 * heightRatio,
-                          decoration: BoxDecoration(
-                            color: barColor,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                            boxShadow: (isFound || isCurrent || isJump)
-                                ? [BoxShadow(color: barColor.withValues(alpha: 0.5), blurRadius: 12, offset: const Offset(0, -2))]
-                                : [],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // Index label
-                        Text(
-                          '[$idx]',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
 
             // ── Result Banner ─────────────────────────────────────────────────
             if (isFinished)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 400),
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: step.stepType == SearchStepType.found
-                      ? _green.withValues(alpha: 0.15)
-                      : _red.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: step.stepType == SearchStepType.found
-                        ? _green.withValues(alpha: 0.4)
-                        : _red.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      step.stepType == SearchStepType.found
-                          ? Icons.check_circle_rounded
-                          : Icons.cancel_rounded,
-                      color: step.stepType == SearchStepType.found ? _green : _red,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      step.stepType == SearchStepType.found
-                          ? '$_targetValue found at index ${step.foundIndex}!'
-                          : '$_targetValue not found in array.',
-                      style: TextStyle(
-                        color: step.stepType == SearchStepType.found ? _green : _red,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            // ── Playback Controls ─────────────────────────────────────────────
-            ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  padding: const EdgeInsets.only(bottom: 40, top: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: GlassPanel(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  borderRadius: 14,
+                  glowColor: step.stepType == SearchStepType.found ? _green : _red,
+                  alpha: 0.15,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        onPressed: _currentStepIndex > 0 ? _prevStep : null,
-                        icon: Icon(Icons.skip_previous,
-                            color: _currentStepIndex > 0 ? Colors.white : Colors.white24,
-                            size: 32),
+                      Icon(
+                        step.stepType == SearchStepType.found
+                            ? Icons.check_circle_rounded
+                            : Icons.cancel_rounded,
+                        color: step.stepType == SearchStepType.found ? _green : _red,
+                        size: 20,
                       ),
-                      const SizedBox(width: 20),
-                      GestureDetector(
-                        onTap: _togglePlay,
-                        child: Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(colors: [_indigoLight, _indigo]),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _indigo.withValues(alpha: 0.4),
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            _isPlaying ? Icons.pause : Icons.play_arrow,
-                            color: Colors.white,
-                            size: 32,
-                          ),
+                      const SizedBox(width: 10),
+                      Text(
+                        step.stepType == SearchStepType.found
+                            ? 'Element Found at Index ${step.foundIndex}'
+                            : 'Element Not Present',
+                        style: TextStyle(
+                          color: step.stepType == SearchStepType.found ? _green : _red,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
                         ),
-                      ),
-                      const SizedBox(width: 20),
-                      IconButton(
-                        onPressed: _currentStepIndex < _steps!.length - 1 ? _nextStep : null,
-                        icon: Icon(Icons.skip_next,
-                            color: _currentStepIndex < _steps!.length - 1
-                                ? Colors.white
-                                : Colors.white24,
-                            size: 32),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
+
+            // ── Playback Controls ─────────────────────────────────────────────
+            if (_steps != null)
+              BaseVisualizerControl(
+                isPlaying: _isPlaying,
+                canStepBack: _currentStepIndex > 0,
+                canStepForward: _currentStepIndex < _steps!.length - 1,
+                onPlayPause: _togglePlay,
+                onStepBack: _prevStep,
+                onStepForward: _nextStep,
+                onRestart: _restart,
+                currentArray: _currentArray,
+                onArrayUpdated: _handleArrayUpdate,
+              ),
           ],
         ),
       ],
+      ),
     );
   }
 }

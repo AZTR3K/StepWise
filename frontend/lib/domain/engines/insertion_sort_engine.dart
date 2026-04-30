@@ -18,7 +18,7 @@ class InsertionSortEngine {
         activeIndexA: i,
         activeIndexB: null,
         isSwap: false,
-        activeCodeLine: 1, // "pick arr[i]"
+        activeCodeLine: 2, // "pick arr[i]"
       ));
 
       while (j >= 0 && arr[j] > key) {
@@ -28,7 +28,7 @@ class InsertionSortEngine {
           activeIndexA: j,
           activeIndexB: j + 1,
           isSwap: false,
-          activeCodeLine: 2, // "compare with sorted portion"
+          activeCodeLine: 3, // "compare with sorted portion"
         ));
 
         arr[j + 1] = arr[j];
@@ -39,7 +39,7 @@ class InsertionSortEngine {
           activeIndexA: j,
           activeIndexB: j + 1,
           isSwap: true,
-          activeCodeLine: 3, // "shift element right"
+          activeCodeLine: 4, // "shift element right"
         ));
 
         j--;
@@ -53,11 +53,11 @@ class InsertionSortEngine {
         activeIndexA: j + 1,
         activeIndexB: null,
         isSwap: true,
-        activeCodeLine: 4, // "insert at correct position"
+        activeCodeLine: 5, // "insert at correct position"
       ));
     }
 
-    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 5));
+    history.add(StepState(arraySnapshot: List.from(arr), activeCodeLine: 6));
     return history;
   }
 }
