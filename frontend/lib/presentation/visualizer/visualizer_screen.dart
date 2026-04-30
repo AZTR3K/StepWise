@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart' hide StepState;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/engines/bubble_sort_engine.dart';
 import '../../domain/engines/merge_sort_engine.dart';
 import '../../domain/engines/quick_sort_engine.dart';
@@ -8,6 +9,7 @@ import '../../domain/engines/insertion_sort_engine.dart';
 import '../../domain/engines/selection_sort_engine.dart';
 import '../../domain/models/step_state.dart';
 import '../theme/app_colors.dart';
+import '../state/visualizer_state.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/base_visualizer_control.dart';
 
@@ -95,16 +97,16 @@ List<StepState> _generateSteps(String algorithmName, List<int> array) {
   }
 }
 
-class VisualizerScreen extends StatefulWidget {
+class VisualizerScreen extends ConsumerStatefulWidget {
   final String algorithmName;
 
   const VisualizerScreen({super.key, required this.algorithmName});
 
   @override
-  State<VisualizerScreen> createState() => _VisualizerScreenState();
+  ConsumerState<VisualizerScreen> createState() => _VisualizerScreenState();
 }
 
-class _VisualizerScreenState extends State<VisualizerScreen> {
+class _VisualizerScreenState extends ConsumerState<VisualizerScreen> {
   late List<StepState> _steps;
   int _currentStepIndex = 0;
   bool _isPlaying = false;
@@ -165,11 +167,16 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
     if (_userIsScrolling) return;
     final key = _lineKeys[activeLine];
     if (key == null || key.currentContext == null) return;
+
+    // Scale animation duration based on playback speed
+    final speed = ref.read(playbackSpeedProvider);
+    final durationMs = (300 / speed).round().clamp(50, 600);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _userIsScrolling) return;
       Scrollable.ensureVisible(
         key.currentContext!,
-        duration: const Duration(milliseconds: 300),
+        duration: Duration(milliseconds: durationMs),
         curve: Curves.easeInOutCubic,
         alignment: 0.5, // center the line in the viewport
       );
@@ -198,7 +205,10 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
   void _togglePlay() async {
     setState(() => _isPlaying = !_isPlaying);
     while (_isPlaying && _currentStepIndex < _steps.length - 1) {
-      await Future.delayed(const Duration(milliseconds: 600));
+      final speed = ref.read(playbackSpeedProvider);
+      final delayMs = (600 / speed).round();
+      
+      await Future.delayed(Duration(milliseconds: delayMs));
       if (!mounted || !_isPlaying) break;
       _nextStep();
     }

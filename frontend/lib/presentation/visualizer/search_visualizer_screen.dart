@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/engines/linear_search_engine.dart';
 import '../../domain/engines/binary_search_engine.dart';
 import '../../domain/engines/jump_search_engine.dart';
 import '../../domain/engines/exponential_search_engine.dart';
 import '../../domain/models/search_step_state.dart';
 import '../theme/app_colors.dart';
+import '../state/visualizer_state.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/base_visualizer_control.dart';
 
@@ -67,16 +69,16 @@ List<SearchStepState> _generateSteps(String name, List<int> array, int target) {
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-class SearchVisualizerScreen extends StatefulWidget {
+class SearchVisualizerScreen extends ConsumerStatefulWidget {
   final String algorithmName;
 
   const SearchVisualizerScreen({super.key, required this.algorithmName});
 
   @override
-  State<SearchVisualizerScreen> createState() => _SearchVisualizerScreenState();
+  ConsumerState<SearchVisualizerScreen> createState() => _SearchVisualizerScreenState();
 }
 
-class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
+class _SearchVisualizerScreenState extends ConsumerState<SearchVisualizerScreen> {
   // ─── Colours ────────────────────────────────────────────────────────────────
   static const _bg         = AppColors.background;
   static const _indigo      = AppColors.indigo;
@@ -151,11 +153,16 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
     if (_userIsScrolling) return;
     final key = _lineKeys[activeLine];
     if (key == null || key.currentContext == null) return;
+
+    // Scale animation duration based on playback speed
+    final speed = ref.read(playbackSpeedProvider);
+    final durationMs = (300 / speed).round().clamp(50, 600);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _userIsScrolling) return;
       Scrollable.ensureVisible(
         key.currentContext!,
-        duration: const Duration(milliseconds: 300),
+        duration: Duration(milliseconds: durationMs),
         curve: Curves.easeInOutCubic,
         alignment: 0.5,
       );
@@ -182,7 +189,10 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   void _togglePlay() async {
     setState(() => _isPlaying = !_isPlaying);
     while (_isPlaying && _currentStepIndex < _steps.length - 1) {
-      await Future.delayed(const Duration(milliseconds: 700));
+      final speed = ref.read(playbackSpeedProvider);
+      final delayMs = (700 / speed).round();
+
+      await Future.delayed(Duration(milliseconds: delayMs));
       if (!mounted || !_isPlaying) break;
       _nextStep();
     }

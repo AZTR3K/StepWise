@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_colors.dart';
+import '../state/visualizer_state.dart';
 import 'glass_panel.dart';
 
 import 'dart:math' as math;
 
-class BaseVisualizerControl extends StatefulWidget {
+class BaseVisualizerControl extends ConsumerStatefulWidget {
   final bool isPlaying;
   final bool canStepBack;
   final bool canStepForward;
@@ -18,7 +20,6 @@ class BaseVisualizerControl extends StatefulWidget {
   final ValueChanged<List<int>> onArrayUpdated;
 
   // ── Search-mode extensions ──────────────────────────────────────────────────
-  /// When non-null, renders a "Target Value" row above the playback controls.
   final int? currentTarget;
   final ValueChanged<int>? onTargetUpdated;
 
@@ -33,7 +34,6 @@ class BaseVisualizerControl extends StatefulWidget {
     required this.onRestart,
     required this.currentArray,
     required this.onArrayUpdated,
-    // Search-mode — omit for sorting screens
     this.currentTarget,
     this.onTargetUpdated,
   });
@@ -41,15 +41,19 @@ class BaseVisualizerControl extends StatefulWidget {
   bool get isSearchMode => currentTarget != null && onTargetUpdated != null;
 
   @override
-  State<BaseVisualizerControl> createState() => _BaseVisualizerControlState();
+  ConsumerState<BaseVisualizerControl> createState() => _BaseVisualizerControlState();
 }
 
-class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
+class _BaseVisualizerControlState extends ConsumerState<BaseVisualizerControl> with TickerProviderStateMixin {
   late TextEditingController _arrayController;
   late TextEditingController _targetController;
   Timer? _arrayDebounce;
   Timer? _targetDebounce;
   int _currentSize = 0;
+
+  // Animation controller for the size transition
+  late AnimationController _expansionController;
+  late Animation<double> _expansionAnimation;
 
   @override
   void initState() {
@@ -59,12 +63,27 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
     _targetController = TextEditingController(
       text: widget.currentTarget?.toString() ?? '',
     );
+
+    _expansionController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _expansionAnimation = CurvedAnimation(
+      parent: _expansionController,
+      curve: Curves.easeInOutCubic,
+    );
+
+    // Initialize state
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(controlsVisibilityProvider)) {
+        _expansionController.forward();
+      }
+    });
   }
 
   @override
   void didUpdateWidget(covariant BaseVisualizerControl oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Sync array if updated externally (but never stomp active cursor)
     if (widget.currentArray.join(', ') != oldWidget.currentArray.join(', ')) {
       final newText = widget.currentArray.join(', ');
       if (_arrayController.text != newText && !FocusScope.of(context).hasFocus) {
@@ -72,7 +91,6 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
         _currentSize = widget.currentArray.length;
       }
     }
-    // Sync target if changed from outside (e.g. a reset)
     if (widget.currentTarget != oldWidget.currentTarget) {
       final newTarget = widget.currentTarget?.toString() ?? '';
       if (_targetController.text != newTarget && !FocusScope.of(context).hasFocus) {
@@ -87,10 +105,10 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
     _targetDebounce?.cancel();
     _arrayController.dispose();
     _targetController.dispose();
+    _expansionController.dispose();
     super.dispose();
   }
 
-  // ── Array logic ─────────────────────────────────────────────────────────────
   void _onArrayTextChanged(String value) {
     if (_arrayDebounce?.isActive ?? false) _arrayDebounce!.cancel();
     _arrayDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -127,7 +145,6 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
     widget.onArrayUpdated(newArray);
   }
 
-  // ── Target logic ─────────────────────────────────────────────────────────────
   void _onTargetTextChanged(String value) {
     if (_targetDebounce?.isActive ?? false) _targetDebounce!.cancel();
     _targetDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -143,71 +160,105 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
     }
   }
 
-  // ── Build ────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final isVisible = ref.watch(controlsVisibilityProvider);
+    
+    // Sync animation with provider state
+    if (isVisible) {
+      _expansionController.forward();
+    } else {
+      _expansionController.reverse();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: GlassPanel(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12), // Reduced from 16 to save space
         borderRadius: 24,
         alpha: 0.1,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Array Configuration Row ────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _glassInputField(
-                    controller: _arrayController,
-                    hint: 'Comma separated…',
-                    onChanged: _onArrayTextChanged,
-                    onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                    keyboardType: TextInputType.text,
-                  ),
+            SizeTransition(
+              sizeFactor: _expansionAnimation,
+              axisAlignment: -1.0,
+              child: Visibility(
+                visible: isVisible || _expansionController.isAnimating,
+                maintainState: true,
+                child: Column(
+                  children: [
+                    // ── Array Configuration Row ──
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _glassInputField(
+                            controller: _arrayController,
+                            hint: 'Array…',
+                            onChanged: _onArrayTextChanged,
+                            onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _sizeStepperWidget(),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // ── Target Row (search mode) ──
+                    if (widget.isSearchMode) ...[
+                      _targetRow(),
+                      const SizedBox(height: 10),
+                    ],
+
+                    // ── Speed Control Row ──
+                    _speedControlRow(),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                // Size stepper
-                _sizeStepperWidget(),
-              ],
+              ),
             ),
 
-            // ── Target Row (search mode only) ─────────────────────────────────
-            if (widget.isSearchMode) ...[
-              const SizedBox(height: 10),
-              _targetRow(),
-            ],
-
-            const SizedBox(height: 16),
-
-            // ── Playback Controls ─────────────────────────────────────────────
+            // ── Playback Controls ──
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
+                // Minimalist Toggle (Chevron with Rotation)
+                AnimatedRotation(
+                  turns: isVisible ? 0.5 : 0.0, // Rotate 180° when expanded
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOutCubic,
+                  child: _playbackIconButton(
+                    icon: Icons.expand_less,
+                    onPressed: () => ref.read(controlsVisibilityProvider.notifier).toggle(),
+                    color: isVisible ? AppColors.indigoLight : Colors.white54,
+                    size: 24,
+                  ),
+                ),
+                const Spacer(),
+                _playbackIconButton(
+                  icon: Icons.restart_alt,
                   onPressed: widget.onRestart,
-                  icon: const Icon(Icons.restart_alt, color: Colors.white70, size: 28),
                 ),
-                const SizedBox(width: 12),
-                IconButton(
+                const SizedBox(width: 8),
+                _playbackIconButton(
+                  icon: Icons.skip_previous,
                   onPressed: widget.canStepBack ? widget.onStepBack : null,
-                  icon: Icon(Icons.skip_previous,
-                      color: widget.canStepBack ? Colors.white : Colors.white24, size: 32),
+                  isActive: widget.canStepBack,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 // Play / Pause focal point
                 GestureDetector(
                   onTap: widget.onPlayPause,
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: AppColors.indigo,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.indigo.withValues(alpha: 0.45),
-                          blurRadius: 20,
+                          color: AppColors.indigo.withValues(alpha: 0.4),
+                          blurRadius: 15,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -215,16 +266,19 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
                     child: Icon(
                       widget.isPlaying ? Icons.pause : Icons.play_arrow,
                       color: Colors.white,
-                      size: 32,
+                      size: 28,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                IconButton(
+                const SizedBox(width: 8),
+                _playbackIconButton(
+                  icon: Icons.skip_next,
                   onPressed: widget.canStepForward ? widget.onStepForward : null,
-                  icon: Icon(Icons.skip_next,
-                      color: widget.canStepForward ? Colors.white : Colors.white24, size: 32),
+                  isActive: widget.canStepForward,
                 ),
+                const Spacer(),
+                // Symmetrical balance (invisible)
+                const SizedBox(width: 32),
               ],
             ),
           ],
@@ -235,38 +289,50 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
 
   // ── Sub-widgets ──────────────────────────────────────────────────────────────
 
+  Widget _playbackIconButton({
+    required IconData icon,
+    VoidCallback? onPressed,
+    bool isActive = true,
+    Color? color,
+    double size = 24,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(
+        icon,
+        color: color ?? (isActive ? Colors.white70 : Colors.white24),
+        size: size,
+      ),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+    );
+  }
+
   Widget _glassInputField({
     required TextEditingController controller,
     required String hint,
     required ValueChanged<String> onChanged,
     required ValueChanged<String> onSubmitted,
-    TextInputType keyboardType = TextInputType.text,
-    TextInputAction textInputAction = TextInputAction.done,
   }) {
     return Container(
-      height: 48,
+      height: 40,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Center(
         child: TextField(
           controller: controller,
           onChanged: onChanged,
           onSubmitted: onSubmitted,
-          textInputAction: textInputAction,
-          keyboardType: keyboardType,
-          style: const TextStyle(
-            color: Colors.white,
-            fontFamily: 'monospace',
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 13),
           decoration: InputDecoration(
             border: InputBorder.none,
             hintText: hint,
-            hintStyle: const TextStyle(color: Colors.white30),
+            hintStyle: const TextStyle(color: Colors.white30, fontSize: 12),
+            isDense: true,
           ),
         ),
       ),
@@ -275,29 +341,30 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
 
   Widget _sizeStepperWidget() {
     return Container(
-      height: 48,
+      height: 40,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.remove, color: Colors.white70, size: 20),
+            icon: const Icon(Icons.remove, color: Colors.white60, size: 16),
             onPressed: () => _modulateSize(-1),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32),
           ),
           Text(
             '$_currentSize',
-            style: const TextStyle(
-              color: AppColors.indigoLight,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: AppColors.indigoLight, fontWeight: FontWeight.bold, fontSize: 13),
           ),
           IconButton(
-            icon: const Icon(Icons.add, color: Colors.white70, size: 20),
+            icon: const Icon(Icons.add, color: Colors.white60, size: 16),
             onPressed: () => _modulateSize(1),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32),
           ),
         ],
       ),
@@ -307,49 +374,35 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
   Widget _targetRow() {
     return Row(
       children: [
-        // Label chip with orange glow
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.orange.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.orange.withValues(alpha: 0.25)),
+            color: AppColors.orange.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.orange.withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.ads_click_rounded, color: AppColors.orange, size: 15),
-              const SizedBox(width: 6),
+              Icon(Icons.ads_click_rounded, color: AppColors.orange, size: 14),
+              const SizedBox(width: 4),
               Text(
                 'Target',
-                style: TextStyle(
-                  color: AppColors.orange,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
+                style: TextStyle(color: AppColors.orange, fontSize: 11, fontWeight: FontWeight.w700),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 10),
-        // Target input — constrained width so it doesn't overflow
+        const SizedBox(width: 8),
         Expanded(
           child: Container(
-            height: 44,
+            height: 40,
             decoration: BoxDecoration(
               color: AppColors.orange.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(color: AppColors.orange.withValues(alpha: 0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.orange.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Center(
               child: TextField(
                 controller: _targetController,
@@ -358,20 +411,99 @@ class _BaseVisualizerControlState extends State<BaseVisualizerControl> {
                   _parseAndUpdateTarget(v);
                   FocusScope.of(context).unfocus();
                 },
-                textInputAction: TextInputAction.done,
-                keyboardType: TextInputType.numberWithOptions(signed: true),
-                style: TextStyle(
-                  color: AppColors.orange,
-                  fontFamily: 'monospace',
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+                keyboardType: TextInputType.number,
+                style: TextStyle(color: AppColors.orange, fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: 'e.g. 42',
-                  hintStyle: TextStyle(color: AppColors.orange.withValues(alpha: 0.35)),
+                  hintStyle: TextStyle(color: AppColors.orange.withValues(alpha: 0.3)),
+                  isDense: true,
                 ),
               ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _speedControlRow() {
+    final speed = ref.watch(playbackSpeedProvider);
+    final isNormalSpeed = (speed - 1.0).abs() < 0.01;
+
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        // Label
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.indigo.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.indigo.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.speed_rounded, color: AppColors.indigoLight, size: 14),
+              const SizedBox(width: 4),
+              const Text(
+                'Speed',
+                style: TextStyle(color: AppColors.indigoLight, fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Slider
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 2,
+              activeTrackColor: AppColors.indigoLight,
+              inactiveTrackColor: Colors.white10,
+              thumbColor: Colors.white,
+              overlayColor: AppColors.indigo.withValues(alpha: 0.2),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+            ),
+            child: Slider(
+              value: speed,
+              min: 0.25,
+              max: 4.0,
+              divisions: 15,
+              onChanged: (val) => ref.read(playbackSpeedProvider.notifier).set(val),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        // Speed label (Tap-to-Reset)
+        GestureDetector(
+          onTap: () {
+            ref.read(playbackSpeedProvider.notifier).set(1.0);
+            Feedback.forTap(context);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 46,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isNormalSpeed ? AppColors.indigo.withValues(alpha: 0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(6),
+              boxShadow: isNormalSpeed ? [
+                BoxShadow(color: AppColors.indigo.withValues(alpha: 0.3), blurRadius: 10, spreadRadius: -2)
+              ] : [],
+            ),
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                color: isNormalSpeed ? AppColors.indigoLight : Colors.white70,
+                fontFamily: 'monospace',
+                fontSize: 11,
+                fontWeight: isNormalSpeed ? FontWeight.bold : FontWeight.normal,
+              ),
+              child: Text('${speed.toStringAsFixed(2)}x'),
             ),
           ),
         ),
