@@ -85,10 +85,10 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   static const _green       = Colors.greenAccent;
   static const _red         = Colors.redAccent;
 
-  List<SearchStepState>? _steps;
+  late List<SearchStepState> _steps;
   int _currentStepIndex = 0;
   bool _isPlaying = false;
-  int? _targetValue;
+  late int _targetValue;
   late List<int> _currentArray;
 
   // ─── Pseudocode auto-scroll ────────────────────────────────────────────────
@@ -100,12 +100,16 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   List<String> get _pseudoCode =>
       _pseudoCodeMap[widget.algorithmName] ?? _pseudoCodeMap['Linear Search']!;
 
-  // ─── Show target input dialog on first frame ─────────────────────────────
+  // ─── Instant initialization — no blocking dialog ─────────────────────────
   @override
   void initState() {
     super.initState();
     _currentArray = List.from(_baseArray);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showTargetDialog());
+    // Default target: median element of the display array so it's visually
+    // interesting from the very first frame.
+    final sorted = List<int>.from(_currentArray)..sort();
+    _targetValue = sorted[sorted.length ~/ 2];
+    _steps = _generateSteps(widget.algorithmName, _currentArray, _targetValue);
   }
 
   @override
@@ -115,107 +119,30 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
     super.dispose();
   }
 
+  // ─── Pause & Flush — array changed ───────────────────────────────────────
   void _handleArrayUpdate(List<int> newArray) {
-    if (_isPlaying) {
-      setState(() => _isPlaying = false);
-    }
     setState(() {
+      _isPlaying = false;
       _currentArray = newArray;
-      if (_targetValue != null) {
-        _steps = _generateSteps(widget.algorithmName, _currentArray, _targetValue!);
-        _currentStepIndex = 0;
-      }
+      _steps = _generateSteps(widget.algorithmName, _currentArray, _targetValue);
+      _currentStepIndex = 0;
+    });
+  }
+
+  // ─── Pause & Flush — target changed ──────────────────────────────────────
+  void _handleTargetUpdate(int newTarget) {
+    setState(() {
+      _isPlaying = false;
+      _targetValue = newTarget;
+      _steps = _generateSteps(widget.algorithmName, _currentArray, _targetValue);
+      _currentStepIndex = 0;
     });
   }
 
   void _restart() {
-    if (_isPlaying) {
-      setState(() => _isPlaying = false);
-    }
     setState(() {
-      _currentStepIndex = 0;
-    });
-  }
-
-  Future<void> _showTargetDialog({bool isReset = false}) async {
-    if (isReset) setState(() { _steps = null; _currentStepIndex = 0; _isPlaying = false; });
-    final controller = TextEditingController();
-
-    // Sort-aware hint: show what values are in the working array
-    final displayArray = List<int>.from(_currentArray);
-    if (widget.algorithmName != 'Linear Search') displayArray.sort();
-
-    await showDialog(
-      context: context,
-      barrierDismissible: !isReset && _steps != null ? true : false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.background,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Enter Target Value',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Array: ${displayArray.join(', ')}',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Pick a value from the array above (or any other number).',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 11),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'e.g. ${displayArray[displayArray.length ~/ 2]}',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.07),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _indigo, width: 1.5),
-                ),
-              ),
-              onSubmitted: (_) => _submitTarget(ctx, controller.text),
-            ),
-          ],
-        ),
-        actions: [
-          if (_steps != null)
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
-            ),
-          TextButton(
-            onPressed: () => _submitTarget(ctx, controller.text),
-            child: Text('Start', style: TextStyle(color: _indigoLight, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _submitTarget(BuildContext ctx, String text) {
-    final value = int.tryParse(text.trim());
-    if (value == null) return;
-    Navigator.pop(ctx);
-    setState(() {
-      _targetValue = value;
-      _steps = _generateSteps(widget.algorithmName, _currentArray, value);
-      _currentStepIndex = 0;
       _isPlaying = false;
+      _currentStepIndex = 0;
     });
   }
 
@@ -237,9 +164,9 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
 
   // ─── Playback ────────────────────────────────────────────────────────────
   void _nextStep() {
-    if (_currentStepIndex < _steps!.length - 1) {
+    if (_currentStepIndex < _steps.length - 1) {
       setState(() => _currentStepIndex++);
-      _scrollToActiveLine(_steps![_currentStepIndex].activeCodeLine);
+      _scrollToActiveLine(_steps[_currentStepIndex].activeCodeLine);
     } else {
       setState(() => _isPlaying = false);
     }
@@ -248,13 +175,13 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
   void _prevStep() {
     if (_currentStepIndex > 0) {
       setState(() { _currentStepIndex--; _isPlaying = false; });
-      _scrollToActiveLine(_steps![_currentStepIndex].activeCodeLine);
+      _scrollToActiveLine(_steps[_currentStepIndex].activeCodeLine);
     }
   }
 
   void _togglePlay() async {
     setState(() => _isPlaying = !_isPlaying);
-    while (_isPlaying && _currentStepIndex < _steps!.length - 1) {
+    while (_isPlaying && _currentStepIndex < _steps.length - 1) {
       await Future.delayed(const Duration(milliseconds: 700));
       if (!mounted || !_isPlaying) break;
       _nextStep();
@@ -278,23 +205,13 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
           widget.algorithmName,
           style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
         ),
-        actions: [
-          // Reset / change target
-          IconButton(
-            onPressed: () => _showTargetDialog(isReset: true),
-            icon: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: 0.6)),
-            tooltip: 'Change target',
-          ),
-        ],
       ),
-      body: _steps == null
-          ? const SizedBox.shrink() // dialog is showing
-          : _buildBody(),
+      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
-    final step = _steps![_currentStepIndex];
+    final step = _steps[_currentStepIndex];
     final maxVal = step.array.reduce((a, b) => a > b ? a : b).toDouble();
     final isFinished = step.stepType == SearchStepType.found ||
         step.stepType == SearchStepType.notFound;
@@ -319,37 +236,18 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
 
         Column(
           children: [
-            // ── Target Badge ─────────────────────────────────────────────────
+            // ── Status Badge ──────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: Row(
                 children: [
                   _StatusBadge(step: step, orange: _orange, green: _green, red: _red, indigo: _indigo),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _orange.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: _orange.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.ads_click_rounded, color: _orange, size: 14),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Target: $_targetValue',
-                          style: TextStyle(color: _orange, fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+
 
             // ── Pseudocode Panel ──────────────────────────────────────────────
             Flexible(
@@ -537,14 +435,17 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
                         size: 20,
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        step.stepType == SearchStepType.found
-                            ? 'Element Found at Index ${step.foundIndex}'
-                            : 'Element Not Present',
-                        style: TextStyle(
-                          color: step.stepType == SearchStepType.found ? _green : _red,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                      Expanded(
+                        child: Text(
+                          step.stepType == SearchStepType.found
+                              ? 'Target $_targetValue found at index ${step.foundIndex}'
+                              : 'Target $_targetValue not present in array',
+                          style: TextStyle(
+                            color: step.stepType == SearchStepType.found ? _green : _red,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -552,19 +453,21 @@ class _SearchVisualizerScreenState extends State<SearchVisualizerScreen> {
                 ),
               ),
 
-            // ── Playback Controls ─────────────────────────────────────────────
-            if (_steps != null)
-              BaseVisualizerControl(
-                isPlaying: _isPlaying,
-                canStepBack: _currentStepIndex > 0,
-                canStepForward: _currentStepIndex < _steps!.length - 1,
-                onPlayPause: _togglePlay,
-                onStepBack: _prevStep,
-                onStepForward: _nextStep,
-                onRestart: _restart,
-                currentArray: _currentArray,
-                onArrayUpdated: _handleArrayUpdate,
-              ),
+            // ── Playback Controls (search mode) ──────────────────────────────
+            BaseVisualizerControl(
+              isPlaying: _isPlaying,
+              canStepBack: _currentStepIndex > 0,
+              canStepForward: _currentStepIndex < _steps.length - 1,
+              onPlayPause: _togglePlay,
+              onStepBack: _prevStep,
+              onStepForward: _nextStep,
+              onRestart: _restart,
+              currentArray: _currentArray,
+              onArrayUpdated: _handleArrayUpdate,
+              // ── Search-mode target field ──
+              currentTarget: _targetValue,
+              onTargetUpdated: _handleTargetUpdate,
+            ),
           ],
         ),
       ],
