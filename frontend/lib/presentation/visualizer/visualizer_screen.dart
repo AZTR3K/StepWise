@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart' hide StepState;
 import '../../domain/engines/bubble_sort_engine.dart';
 import '../../domain/engines/merge_sort_engine.dart';
@@ -116,11 +117,24 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
   static const _indigoLight = AppColors.indigoLight;
   static const _orange = AppColors.orange;
 
+  // ─── Pseudocode auto-scroll ────────────────────────────────────────────────
+  final ScrollController _pseudoScrollController = ScrollController();
+  final Map<int, GlobalKey> _lineKeys = {};
+  bool _userIsScrolling = false;
+  Timer? _userScrollDebounce;
+
   @override
   void initState() {
     super.initState();
     _currentArray = List.from(_initialArray);
     _steps = _generateSteps(widget.algorithmName, _currentArray);
+  }
+
+  @override
+  void dispose() {
+    _pseudoScrollController.dispose();
+    _userScrollDebounce?.cancel();
+    super.dispose();
   }
 
   void _handleArrayUpdate(List<int> newArray) {
@@ -146,9 +160,26 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
   List<String> get _pseudoCode =>
       _pseudoCodeMap[widget.algorithmName] ?? _pseudoCodeMap['Bubble Sort']!;
 
+  // ─── Auto-scroll to active pseudocode line ─────────────────────────────────
+  void _scrollToActiveLine(int activeLine) {
+    if (_userIsScrolling) return;
+    final key = _lineKeys[activeLine];
+    if (key == null || key.currentContext == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _userIsScrolling) return;
+      Scrollable.ensureVisible(
+        key.currentContext!,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
+        alignment: 0.5, // center the line in the viewport
+      );
+    });
+  }
+
   void _nextStep() {
     if (_currentStepIndex < _steps.length - 1) {
       setState(() => _currentStepIndex++);
+      _scrollToActiveLine(_steps[_currentStepIndex].activeCodeLine);
     } else {
       setState(() => _isPlaying = false);
     }
@@ -160,6 +191,7 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
         _currentStepIndex--;
         _isPlaying = false;
       });
+      _scrollToActiveLine(_steps[_currentStepIndex].activeCodeLine);
     }
   }
 
@@ -222,35 +254,56 @@ class _VisualizerScreenState extends State<VisualizerScreen> {
                   child: GlassPanel(
                     padding: const EdgeInsets.all(16),
                     borderRadius: 16,
-                    child: SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: _pseudoCode.asMap().entries.map((entry) {
-                          final isActive = entry.key == currentState.activeCodeLine;
-                          return Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? _indigo.withValues(alpha: 0.2)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              entry.value,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 12,
-                                color: isActive ? _indigoLight : Colors.white54,
-                                fontWeight:
-                                    isActive ? FontWeight.bold : FontWeight.normal,
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is UserScrollNotification) {
+                          _userIsScrolling = true;
+                          _userScrollDebounce?.cancel();
+                          _userScrollDebounce = Timer(const Duration(seconds: 2), () {
+                            if (mounted) _userIsScrolling = false;
+                          });
+                        }
+                        return false;
+                      },
+                      child: SingleChildScrollView(
+                        controller: _pseudoScrollController,
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _pseudoCode.asMap().entries.map((entry) {
+                            final lineIndex = entry.key;
+                            final isActive = lineIndex == currentState.activeCodeLine;
+                            // Lazily create a GlobalKey per line index
+                            final key = _lineKeys.putIfAbsent(lineIndex, () => GlobalKey());
+                            return KeyedSubtree(
+                              key: key,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInOutCubic,
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? _indigo.withValues(alpha: 0.2)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  entry.value,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 12,
+                                    color: isActive ? _indigoLight : Colors.white54,
+                                    fontWeight:
+                                        isActive ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ),
                   ),
