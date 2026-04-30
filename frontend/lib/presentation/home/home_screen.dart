@@ -1,19 +1,20 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/presentation/home/category_detail_screen.dart';
+import 'package:frontend/presentation/profile/profile_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
+import '../../domain/providers/profile_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
   int _activeNav = 0;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -38,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  // ─── Colours ───────────────────────────────────────────────
   static const _bg = AppColors.background;
   static const _indigo = AppColors.indigo;
   static const _indigoLight = AppColors.indigoLight;
@@ -50,7 +50,6 @@ class _HomeScreenState extends State<HomeScreen>
       backgroundColor: _bg,
       body: Stack(
         children: [
-          // ── Ambient glows (outside scroll, no BackdropFilter) ──
           Positioned(
             top: -120,
             right: -100,
@@ -67,67 +66,126 @@ class _HomeScreenState extends State<HomeScreen>
             child: _ambientGlow(_indigo, 0.05, 260),
           ),
 
-          // ── Scrollable body ────────────────────────────────────
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: CustomScrollView(
-              clipBehavior: Clip.none,
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(child: _buildAppBar()),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 160),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildFeaturedCard(),
-                      const SizedBox(height: 32),
-                      _sectionLabel('Continue Learning'),
-                      const SizedBox(height: 14),
-                      _buildContinueLearningCard(),
-                      const SizedBox(height: 32),
-                      _buildArchitecturesHeader(),
-                      const SizedBox(height: 14),
-                      _buildGrid(),
-                      const SizedBox(height: 32),
-                      _sectionLabel('Your Progress'),
-                      const SizedBox(height: 14),
-                      _buildStatTile(
-                        'Time Invested',
-                        '14.5 Hours',
-                        Icons.timer_outlined,
-                        Colors.greenAccent,
-                      ),
-                      const SizedBox(height: 10),
-                      _buildStatTile(
-                        'Logic Mastery',
-                        '42 Solved',
-                        Icons.verified_outlined,
-                        _indigoLight,
-                      ),
-                      const SizedBox(height: 10),
-                      _buildStatTile(
-                        'Complexity Rank',
-                        'Level 4 Scholar',
-                        Icons.trending_up,
-                        _orange,
-                      ),
-                      const SizedBox(height: 28),
-                      _buildSignOut(),
-                    ]),
-                  ),
-                ),
-              ],
-            ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            child: _buildCurrentTab(),
           ),
 
-          // ── Bottom nav (only BackdropFilter here — not scrolling) ─
           Align(alignment: Alignment.bottomCenter, child: _buildBottomNav()),
         ],
       ),
     );
   }
 
-  // ─── Ambient glow helper ──────────────────────────────────
+  Widget _buildCurrentTab() {
+    switch (_activeNav) {
+      case 0:
+        return _buildHomeTab(key: const ValueKey('home_tab'));
+      case 1:
+        return _buildSearchTab(key: const ValueKey('search_tab'));
+      case 2:
+        return const ProfileScreen(key: ValueKey('profile_tab'));
+      default:
+        return _buildHomeTab(key: const ValueKey('home_tab'));
+    }
+  }
+
+  Widget _buildHomeTab({required Key key}) {
+    return FadeTransition(
+      key: key,
+      opacity: _fadeAnimation,
+      child: CustomScrollView(
+        clipBehavior: Clip.none,
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: _buildAppBar()),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 160),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildFeaturedCard(),
+                const SizedBox(height: 32),
+                _sectionLabel('Continue Learning'),
+                const SizedBox(height: 14),
+                _buildContinueLearningCard(),
+                const SizedBox(height: 32),
+                _sectionLabel('Quick Stats'),
+                const SizedBox(height: 14),
+                _buildStatTile(
+                  'Logic Mastery',
+                  '42 Solved',
+                  Icons.verified_outlined,
+                  _indigoLight,
+                ),
+                const SizedBox(height: 10),
+                _buildStatTile(
+                  'Complexity Rank',
+                  'Level 4 Scholar',
+                  Icons.trending_up,
+                  _orange,
+                ),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchTab({required Key key}) {
+    return FadeTransition(
+      key: key,
+      opacity: _fadeAnimation,
+      child: CustomScrollView(
+        clipBehavior: Clip.none,
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Explore Logic',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1.2,
+                      ),
+                    ),
+                    Text(
+                      'Browse algorithm architectures',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 32, 20, 160),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildGrid(),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _ambientGlow(Color color, double opacity, double size) {
     return Container(
       width: size,
@@ -144,16 +202,13 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ─── App bar ──────────────────────────────────────────────
   Widget _buildAppBar() {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
-            _iconBtn(Icons.menu, () {}),
-            const SizedBox(width: 12),
-            // Logo dot
+            const SizedBox(width: 4),
             Container(
               width: 26,
               height: 26,
@@ -195,6 +250,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             const Spacer(),
+            _iconBtn(Icons.notifications_outlined, () {}),
           ],
         ),
       ),
@@ -220,7 +276,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ─── Featured card ────────────────────────────────────────
   Widget _buildFeaturedCard() {
     return GlassPanel(
       padding: const EdgeInsets.all(26),
@@ -303,7 +358,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ─── Continue learning ────────────────────────────────────
   Widget _buildContinueLearningCard() {
     return GlassPanel(
       padding: const EdgeInsets.all(24),
@@ -416,49 +470,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ─── Architectures header ─────────────────────────────────
-  Widget _buildArchitecturesHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          'Algorithm\nArchitectures',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 19,
-            fontWeight: FontWeight.w700,
-            height: 1.2,
-            letterSpacing: -0.3,
-          ),
-        ),
-        GestureDetector(
-          onTap: () {},
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _indigo.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _indigo.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: const Text(
-              'VIEW ALL',
-              style: TextStyle(
-                color: _indigoLight,
-                fontSize: 9,
-                letterSpacing: 2,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ─── Grid ─────────────────────────────────────────────────
   Widget _buildGrid() {
     final items = [
       ('Sorting', '12 Algorithms', Icons.sort, Colors.blueAccent),
@@ -538,7 +549,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ─── Stat tile ────────────────────────────────────────────
   Widget _buildStatTile(
     String title,
     String value,
@@ -599,138 +609,110 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ─── Sign out ─────────────────────────────────────────────
-  Widget _buildSignOut() {
-    return Center(
-      child: GestureDetector(
-        onTap: () async {
-          await FirebaseAuth.instance.signOut();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.redAccent.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.redAccent.withValues(alpha: 0.18),
-              width: 1,
-            ),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.logout, color: Colors.redAccent, size: 15),
-              SizedBox(width: 7),
-              Text(
-                'Sign Out',
-                style: TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBottomNav() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 34),
       child: GlassPanel(
         borderRadius: 35,
         padding: EdgeInsets.zero,
-        height: 56,
+        height: 64,
         alpha: 0.08,
         child: LayoutBuilder(
-              builder: (context, constraints) {
-                final itemWidth = constraints.maxWidth / 4;
-                return Stack(
-                  children: [
-                    // ── Liquid glass sliding pill ──
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 350),
-                      curve: Curves.easeInOutCubic,
-                      left: _activeNav * itemWidth + 8,
-                      top: 8,
-                      bottom: 8,
-                      width: itemWidth - 16,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(25),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(25),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.22),
-                                  Colors.white.withValues(alpha: 0.08),
-                                ],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
+          builder: (context, constraints) {
+            final itemWidth = constraints.maxWidth / 3;
+            return Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOutCubic,
+                  left: _activeNav * itemWidth + 8,
+                  top: 8,
+                  bottom: 8,
+                  width: itemWidth - 16,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.2),
+                              Colors.white.withValues(alpha: 0.05),
+                            ],
+                          ),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1,
                           ),
                         ),
                       ),
                     ),
+                  ),
+                ),
 
-                    // ── Nav icons on top ──
-                    Row(
-                      children: [
-                        _navIcon(Icons.home_rounded, 0, itemWidth),
-                        _navIcon(Icons.search_rounded, 1, itemWidth),
-                        _navIcon(Icons.data_object, 2, itemWidth),
-                        _navIcon(Icons.settings_rounded, 3, itemWidth),
-                      ],
-                    ),
+                Row(
+                  children: [
+                    _navIcon(Icons.home_rounded, 0, itemWidth),
+                    _navIcon(Icons.explore_outlined, 1, itemWidth),
+                    _navIcon(Icons.person_outline, 2, itemWidth),
                   ],
-                );
-              },
-            ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _navIcon(IconData icon, int index, double itemWidth) {
     final isActive = _activeNav == index;
+    final imageFile = ref.watch(profileProvider);
+
     return GestureDetector(
-      onTap: () => setState(() => _activeNav = index),
+      onTap: () {
+        if (_activeNav != index) {
+          setState(() => _activeNav = index);
+        }
+      },
       child: SizedBox(
         width: itemWidth,
-        height: 56,
+        height: 64,
         child: Center(
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 250),
-            style: const TextStyle(),
-            child: Icon(
-              icon,
-              size: 26,
-              color: isActive
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.35),
-            ),
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 300),
+            scale: isActive ? 1.1 : 1.0,
+            child: (index == 2 && imageFile != null)
+                ? Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                      image: DecorationImage(
+                        image: FileImage(imageFile),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    size: 26,
+                    color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                  ),
           ),
         ),
       ),
     );
   }
 
-  // ─── Helpers ──────────────────────────────────────────────
   Widget _sectionLabel(String text) {
     return Text(
       text,
@@ -763,4 +745,3 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 }
-
