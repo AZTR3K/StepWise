@@ -3,6 +3,8 @@ import '../visualizer/visualizer_screen.dart';
 import '../visualizer/search_visualizer_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
+import '../visualizer/graph_visualizer_screen.dart';
+import '../visualizer/tree_visualizer_screen.dart';
 
 // ─── Data Models ───────────────────────────────────────────
 
@@ -681,12 +683,32 @@ class _AlgorithmCardState extends State<_AlgorithmCard>
             final searchAlgorithms = {
     'Linear Search', 'Binary Search', 'Jump Search', 'Exponential Search',
   };
+  
+  const graphAlgorithms = {'BFS', 'DFS', "Dijkstra's", 'Bellman-Ford'};
+
+  const treeAlgortihms = {'Inorder Traversal', 'Preorder Traversal', 'AVL Tree', 'Red-Black Tree'};
+
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => searchAlgorithms.contains(algo.name)
-          ? SearchVisualizerScreen(algorithmName: algo.name)
-          : VisualizerScreen(algorithmName: algo.name),
+      builder: (context) {
+        // 1. Check for Search Algorithms
+        if (searchAlgorithms.contains(algo.name)) {
+          return SearchVisualizerScreen(algorithmName: algo.name);
+        }
+
+        // 2. Check for Graph Algorithms
+        if (graphAlgorithms.contains(algo.name)) {
+          return GraphVisualizerScreen(algorithmName: algo.name);
+        }
+
+        if(treeAlgortihms.contains(algo.name)){
+          return TreeVisualizerScreen(algorithmName: algo.name);
+        }
+
+        // 3. Default (Sorting Algorithms)
+        return VisualizerScreen(algorithmName: algo.name);
+      },
     ),
   );
 },
