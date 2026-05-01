@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../visualizer/graph_visualizer_screen.dart';
 import '../visualizer/tree_visualizer_screen.dart';
+import '../visualizer/dp_visualizer_screen.dart';
 
 // ─── Data Models ───────────────────────────────────────────
 
@@ -280,6 +281,114 @@ final Map<String, CategoryData> categoryDataMap = {
         progress: 0.0,
         icon: Icons.circle_outlined,
         accentColor: const Color(0xFF8E9BFF),
+      ),
+    ],
+  ),
+  'Dynamic Programming': CategoryData(
+    title: 'Dynamic Programming',
+    subtitle: '10 Algorithms',
+    icon: Icons.grid_view_rounded,
+    accentColor: Colors.deepPurpleAccent,
+    algorithms: [
+      AlgorithmItem(
+        name: 'Fibonacci Sequence',
+        complexity: 'O(N)',
+        description:
+            'Computes the nth number in the sequence using a 1D table (Memoization/Tabulation).',
+        difficulty: Difficulty.easy,
+        progress: 0.0,
+        icon: Icons.linear_scale, // Represents 1D table
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: '0/1 Knapsack',
+        complexity: 'O(N*W)',
+        description:
+            'Maximizes value within weight capacity using a 2D grid to track items and weights.',
+        difficulty: Difficulty.hard,
+        progress: 0.0,
+        icon: Icons.grid_on, // Represents 2D grid
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Longest Common Subsequence',
+        complexity: 'O(M*N)',
+        description:
+            'Finds the longest subsequence present in two strings using a 2D matrix.',
+        difficulty: Difficulty.medium,
+        progress: 0.0,
+        icon: Icons.table_chart_outlined, // Represents 2D matrix
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Longest Increasing Subsequence',
+        complexity: 'O(N²)',
+        description:
+            'Finds the longest subsequence of a given sequence where all elements are sorted, visualized with a 1D table and pointer arrows.',
+        difficulty: Difficulty.medium,
+        progress: 0.0,
+        icon: Icons.trending_up, // Represents increasing nature/arrows
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Coin Change',
+        complexity: 'O(N*C)',
+        description:
+            'Calculates the minimum coins needed for a total using a 1D table approach.',
+        difficulty: Difficulty.medium,
+        progress: 0.0,
+        icon: Icons.monetization_on_outlined,
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Matrix Chain Multiplication',
+        complexity: 'O(N³)',
+        description:
+            'Determines the most efficient way to multiply matrices using an upper-triangular 2D matrix.',
+        difficulty: Difficulty.hard,
+        progress: 0.0,
+        icon: Icons.data_object, // Or Icons.grain to represent matrix complexity
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Edit Distance',
+        complexity: 'O(M*N)',
+        description:
+            'Finds the minimum number of operations to convert one string to another using a 2D grid.',
+        difficulty: Difficulty.medium,
+        progress: 0.0,
+        icon: Icons.text_fields_outlined,
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Rod Cutting',
+        complexity: 'O(N²)',
+        description:
+            'Maximizes total revenue by cutting a rod into pieces, visualized via a 1D table.',
+        difficulty: Difficulty.easy,
+        progress: 0.0,
+        icon: Icons.content_cut_outlined,
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Max Subarray Sum',
+        complexity: 'O(N)',
+        description:
+            'Kadane\'s Algorithm: Finds the contiguous subarray with the largest sum using a 1D DP state.',
+        difficulty: Difficulty.easy,
+        progress: 0.0,
+        icon: Icons.add_box_outlined,
+        accentColor: Colors.deepPurpleAccent,
+      ),
+      AlgorithmItem(
+        name: 'Max Subarray Product',
+        complexity: 'O(N)',
+        description:
+            'Finds the contiguous subarray with the largest product, tracking both max and min in a 1D table.',
+        difficulty: Difficulty.medium,
+        progress: 0.0,
+        icon: Icons.calculate_outlined,
+        accentColor: Colors.deepPurpleAccent,
       ),
     ],
   ),
@@ -685,19 +794,21 @@ class _AlgorithmCardState extends State<_AlgorithmCard>
   };
   
   const graphAlgorithms = {'BFS', 'DFS', "Dijkstra's", 'Bellman-Ford'};
-
   const treeAlgortihms = {'Inorder Traversal', 'Preorder Traversal', 'AVL Tree', 'Red-Black Tree'};
+  const dpAlgorithms = {
+    'Fibonacci Sequence', '0/1 Knapsack', 'Longest Common Subsequence',
+    'Longest Increasing Subsequence', 'Coin Change', 'Matrix Chain Multiplication',
+    'Edit Distance', 'Rod Cutting', 'Max Subarray Sum', 'Max Subarray Product'
+  };
 
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) {
-        // 1. Check for Search Algorithms
         if (searchAlgorithms.contains(algo.name)) {
           return SearchVisualizerScreen(algorithmName: algo.name);
         }
 
-        // 2. Check for Graph Algorithms
         if (graphAlgorithms.contains(algo.name)) {
           return GraphVisualizerScreen(algorithmName: algo.name);
         }
@@ -706,7 +817,10 @@ class _AlgorithmCardState extends State<_AlgorithmCard>
           return TreeVisualizerScreen(algorithmName: algo.name);
         }
 
-        // 3. Default (Sorting Algorithms)
+        if(dpAlgorithms.contains(algo.name)){
+          return DPVisualizerScreen(algorithmName: algo.name);
+        }
+
         return VisualizerScreen(algorithmName: algo.name);
       },
     ),

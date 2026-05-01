@@ -476,6 +476,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
       ('Searching', '8 Algorithms', Icons.search, _orange),
       ('Graphs', '15 Algorithms', Icons.hub_outlined, Colors.greenAccent),
       ('Trees', '10 Algorithms', Icons.account_tree_outlined, _indigoLight),
+      ('Dynamic Programming', '10 Algorithms', Icons.grid_view_rounded, Colors.deepPurpleAccent),
     ];
     return GridView.count(
       crossAxisCount: 2,
