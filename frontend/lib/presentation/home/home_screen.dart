@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,10 +15,12 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with TickerProviderStateMixin {
   int _activeNav = 0;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
@@ -31,11 +34,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
       curve: Curves.easeOut,
     );
     _fadeController.forward();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -50,21 +59,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
       backgroundColor: _bg,
       body: Stack(
         children: [
-          Positioned(
-            top: -120,
-            right: -100,
-            child: _ambientGlow(_indigo, 0.09, 340),
-          ),
-          Positioned(
-            top: 380,
-            left: -120,
-            child: _ambientGlow(_indigoLight, 0.06, 300),
-          ),
-          Positioned(
-            bottom: 160,
-            right: -80,
-            child: _ambientGlow(_indigo, 0.05, 260),
-          ),
+          Positioned(top: -140, right: -120, child: _ambientGlow(_indigo, 0.12, 380)),
+          Positioned(top: 320, left: -140, child: _ambientGlow(_indigoLight, 0.08, 320)),
+          Positioned(top: 600, right: -60, child: _ambientGlow(_orange, 0.05, 240)),
+          Positioned(bottom: 120, left: -60, child: _ambientGlow(_indigo, 0.06, 280)),
 
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
@@ -110,25 +108,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
               delegate: SliverChildListDelegate([
                 _buildFeaturedCard(),
                 const SizedBox(height: 32),
-                _sectionLabel('Continue Learning'),
+                _sectionLabel('Continue Learning', eyebrow: 'IN PROGRESS'),
                 const SizedBox(height: 14),
                 _buildContinueLearningCard(),
                 const SizedBox(height: 32),
-                _sectionLabel('Quick Stats'),
+                _sectionLabel('Quick Stats', eyebrow: 'YOUR PROGRESS'),
                 const SizedBox(height: 14),
-                _buildStatTile(
-                  'Logic Mastery',
-                  '42 Solved',
-                  Icons.verified_outlined,
-                  _indigoLight,
-                ),
+                _buildStatTile('Logic Mastery', '42 Solved', Icons.verified_outlined, _indigoLight),
                 const SizedBox(height: 10),
-                _buildStatTile(
-                  'Complexity Rank',
-                  'Level 4 Scholar',
-                  Icons.trending_up,
-                  _orange,
-                ),
+                _buildStatTile('Complexity Rank', 'Level 4 Scholar', Icons.trending_up, _orange),
               ]),
             ),
           ),
@@ -148,24 +136,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
           SliverToBoxAdapter(
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Explore Logic',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -1.2,
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: _orange,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: _orange.withValues(alpha: 0.6), blurRadius: 8),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'ALGORITHMS · 55 TOTAL',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.55),
+                            fontSize: 10,
+                            letterSpacing: 2.4,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    RichText(
+                      text: const TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Explore\n',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 44,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -2,
+                              height: 1.0,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'Logic.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 44,
+                              fontWeight: FontWeight.w300,
+                              fontStyle: FontStyle.italic,
+                              letterSpacing: -1.5,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 14),
                     Text(
-                      'Browse algorithm architectures',
+                      'Browse algorithm architectures, watch them think.',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 16,
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontSize: 15,
+                        height: 1.5,
                       ),
                     ),
                   ],
@@ -174,10 +208,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 160),
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 160),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildGrid(),
+                _buildCategoryStack(),
               ]),
             ),
           ),
@@ -187,16 +221,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
   }
 
   Widget _ambientGlow(Color color, double opacity, double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color.withValues(alpha: opacity),
-            Colors.transparent,
-          ],
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color.withValues(alpha: opacity), Colors.transparent],
+          ),
         ),
       ),
     );
@@ -210,8 +243,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
           children: [
             const SizedBox(width: 4),
             Container(
-              width: 26,
-              height: 26,
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(
@@ -220,32 +253,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
-                  BoxShadow(
-                    color: _indigo.withValues(alpha: 0.45),
-                    blurRadius: 10,
-                  ),
+                  BoxShadow(color: _indigo.withValues(alpha: 0.55), blurRadius: 14),
                 ],
               ),
-              child: const Icon(Icons.blur_on, color: Colors.white, size: 14),
+              child: const Icon(Icons.blur_on, color: Colors.white, size: 15),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             const Text(
               'StepWise',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 15,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Flexible(
               child: Text(
                 'Algorithm Visualiser',
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withValues(alpha: 0.32),
                   fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -265,92 +296,114 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
         height: 38,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
         ),
-        child: Icon(icon, color: Colors.white, size: 17),
+        child: Stack(
+          children: [
+            Center(child: Icon(icon, color: Colors.white, size: 17)),
+            Positioned(
+              right: 9,
+              top: 9,
+              child: Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: _orange,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _bg, width: 1.2),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  // ============= FEATURED CARD =============
   Widget _buildFeaturedCard() {
     return GlassPanel(
-      padding: const EdgeInsets.all(26),
-      borderRadius: 26,
-      alpha: 0.05,
+      padding: EdgeInsets.zero,
+      borderRadius: 28,
+      alpha: 0.06,
       glowColor: _indigo,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              _badge('FEATURED LOGIC', _orange),
-              const SizedBox(width: 8),
-              Text(
-                'STEPWISE',
-                style: TextStyle(
-                  color: _indigoLight.withValues(alpha: 0.6),
-                  fontSize: 9,
-                  letterSpacing: 3,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Dijkstra's\nPathfinding",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.w800,
-              height: 1.05,
-              letterSpacing: -1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Explore the kinetic movement of the shortest path algorithm. Witness how weights shift and nodes evolve in a complex web of logic.',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.45),
-              fontSize: 13,
-              height: 1.6,
-            ),
-          ),
-          const SizedBox(height: 22),
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              height: 46,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(23),
-                gradient: const LinearGradient(colors: [_indigoLight, _indigo]),
-                boxShadow: [
-                  BoxShadow(
-                    color: _indigo.withValues(alpha: 0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Launch Visualizer',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 110,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              child: AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, _) {
+                  return CustomPaint(
+                    painter: _PathfindingPainter(
+                      progress: _pulseController.value,
+                      color: _indigoLight,
+                      accent: _orange,
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.play_arrow_rounded, color: Colors.white, size: 18),
-                ],
+                    size: Size.infinite,
+                  );
+                },
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(26, 124, 26, 26),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _badge('FEATURED LOGIC', _orange),
+                    const SizedBox(width: 8),
+                    _monoChip('O((V+E) log V)'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                RichText(
+                  text: const TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "Dijkstra's\n",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 38,
+                          fontWeight: FontWeight.w900,
+                          height: 1.05,
+                          letterSpacing: -1.4,
+                        ),
+                      ),
+                      TextSpan(
+                        text: 'pathfinding.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 38,
+                          fontWeight: FontWeight.w300,
+                          fontStyle: FontStyle.italic,
+                          height: 1.05,
+                          letterSpacing: -1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Witness the kinetic dance of the shortest path. Watch how weights shift and nodes evolve in a complex web of logic.',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 13,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                _primaryCTA(label: 'Launch Visualizer', icon: Icons.play_arrow_rounded, onTap: () {}),
+              ],
             ),
           ),
         ],
@@ -358,84 +411,147 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     );
   }
 
+  Widget _primaryCTA({required String label, required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          gradient: const LinearGradient(
+            colors: [_indigoLight, _indigo],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(color: _indigo.withValues(alpha: 0.5), blurRadius: 22, offset: const Offset(0, 8)),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14.5,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+              child: Icon(icon, color: Colors.white, size: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildContinueLearningCard() {
     return GlassPanel(
       padding: const EdgeInsets.all(24),
-      borderRadius: 22,
+      borderRadius: 24,
       child: Column(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: _indigo.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: _indigo.withValues(alpha: 0.2),
-                width: 1,
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [_indigo.withValues(alpha: 0.35), Colors.transparent],
+                  ),
+                ),
               ),
-            ),
-            child: const Icon(Icons.call_split, color: _indigoLight, size: 26),
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: _indigo.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _indigo.withValues(alpha: 0.3), width: 1),
+                ),
+                child: const Icon(Icons.call_split, color: _indigoLight, size: 26),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           const Text(
             'Merge Sort',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'SORTING  •  O(N LOG N)',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
-              fontSize: 10,
-              letterSpacing: 2,
-            ),
-          ),
+          const SizedBox(height: 6),
+          _monoChip('SORTING · O(n log n)'),
           const SizedBox(height: 14),
           Text(
-            "You've mastered the 'Divide' phase. Next: The 'Conquer' strategy where sorted sub-arrays are merged into the final solution.",
+            "You've mastered the 'Divide' phase. Next: the 'Conquer' strategy where sorted sub-arrays merge into the final solution.",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.4),
-              fontSize: 12,
-              height: 1.6,
-            ),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12.5, height: 1.6),
           ),
           const SizedBox(height: 18),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                '64%',
-                style: TextStyle(
-                  color: Colors.greenAccent,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: Colors.greenAccent,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Colors.greenAccent.withValues(alpha: 0.6), blurRadius: 8),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    '64%',
+                    style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                ],
               ),
               Text(
                 'Step 7 of 11',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.25),
+                  color: Colors.white.withValues(alpha: 0.3),
                   fontSize: 11,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: 0.64,
-              minHeight: 5,
-              backgroundColor: Colors.white.withValues(alpha: 0.07),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Colors.greenAccent,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              height: 6,
+              color: Colors.white.withValues(alpha: 0.06),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: 0.64,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Colors.greenAccent, Color(0xFF34D399)]),
+                    boxShadow: [
+                      BoxShadow(color: Colors.greenAccent.withValues(alpha: 0.5), blurRadius: 8),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -444,24 +560,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
             onTap: () {},
             child: Container(
               width: double.infinity,
-              height: 42,
+              height: 44,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(21),
-                color: Colors.white.withValues(alpha: 0.05),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 1,
-                ),
+                borderRadius: BorderRadius.circular(22),
+                color: Colors.white.withValues(alpha: 0.06),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1),
               ),
-              child: const Center(
-                child: Text(
-                  'Resume',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Resume',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  Icon(Icons.arrow_forward_rounded, color: Colors.white.withValues(alpha: 0.7), size: 16),
+                ],
               ),
             ),
           ),
@@ -470,110 +584,252 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildGrid() {
-    final items = [
-      ('Sorting', '12 Algorithms', Icons.sort, Colors.blueAccent),
-      ('Searching', '8 Algorithms', Icons.search, _orange),
-      ('Graphs', '15 Algorithms', Icons.hub_outlined, Colors.greenAccent),
-      ('Trees', '10 Algorithms', Icons.account_tree_outlined, _indigoLight),
-      ('Dynamic Programming', '10 Algorithms', Icons.grid_view_rounded, Colors.deepPurpleAccent),
+  // ============= EXPLORE: stack of long animated category cards =============
+  Widget _buildCategoryStack() {
+    final items = <_CategoryItem>[
+      _CategoryItem('Sorting', '6 Algorithms', 'O(n log n)', Icons.sort,
+          const Color(0xFF4FC3F7), _CategoryViz.sortingBars,
+          tagline: 'Watch chaos arrange itself.'),
+      _CategoryItem('Searching', '4 Algorithms', 'O(log n)', Icons.search,
+          _orange, _CategoryViz.binarySearch,
+          tagline: 'Halve, target, conquer.'),
+      _CategoryItem('Graphs', '4 Algorithms', 'O(V+E)', Icons.hub_outlined,
+          const Color(0xFF34D399), _CategoryViz.graph,
+          tagline: 'Trace paths through networks.'),
+      _CategoryItem('Trees', '4 Algorithms', 'O(log n)',
+          Icons.account_tree_outlined, const Color(0xFF8E9BFF), _CategoryViz.tree,
+          tagline: 'Branch, balance, traverse.'),
+      _CategoryItem('Dynamic Programming', '10 Algorithms', 'O(n·m)',
+          Icons.grid_view_rounded, const Color(0xFFB388FF), _CategoryViz.dpGrid,
+          tagline: 'Fill the table, find the optimum.'),
     ];
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.1,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: items
-          .map((e) => _buildGridCard(e.$1, e.$2, e.$3, e.$4))
-          .toList(),
+
+    return Column(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          _buildLongCategoryCard(items[i]),
+          if (i < items.length - 1) const SizedBox(height: 14),
+        ],
+      ],
     );
   }
 
-  Widget _buildGridCard(String title, String sub, IconData icon, Color color) {
+  Widget _buildLongCategoryCard(_CategoryItem item) {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              CategoryDetailScreen(categoryTitle: title, accentColor: color),
+          builder: (_) => CategoryDetailScreen(
+            categoryTitle: item.title,
+            accentColor: item.color,
+          ),
         ),
       ),
       child: GlassPanel(
-        padding: const EdgeInsets.all(16),
-        borderRadius: 18,
-        width: double.infinity,
-        height: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(
-                  color: color.withValues(alpha: 0.18),
-                  width: 1,
+        padding: EdgeInsets.zero,
+        borderRadius: 24,
+        alpha: 0.05,
+        child: SizedBox(
+          height: 191,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+            children: [
+              // Animated visualization strip across the top
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 96,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  child: AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        painter: _vizPainterFor(item.viz, item.color, _pulseController.value),
+                        size: Size.infinite,
+                      );
+                    },
+                  ),
                 ),
               ),
-              child: Icon(icon, color: color, size: 19),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
+
+              // Left accent rail
+              Positioned(
+                left: 0,
+                top: 96,
+                bottom: 0,
+                child: Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        item.color.withValues(alpha: 0.9),
+                        item.color.withValues(alpha: 0.0),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  sub,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    fontSize: 11,
+              ),
+
+              // Bottom info row
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                top: 96,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 16, 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _categoryIcon(item.icon, item.color),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              item.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              item.tagline,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.45),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                height: 1.3,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const SizedBox(width: 8),
+                                Text(
+                                  item.subtitle,
+                                  //overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.4),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              item.color.withValues(alpha: 0.3),
+                              item.color.withValues(alpha: 0.1),
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: item.color.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(Icons.arrow_forward, color: item.color, size: 16),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+
+              // Subtle separator between viz and content
+              Positioned(
+                left: 16,
+                right: 16,
+                top: 96,
+                child: Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0),
+                        Colors.white.withValues(alpha: 0.08),
+                        Colors.white.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          )
         ),
       ),
     );
   }
 
-  Widget _buildStatTile(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  CustomPainter _vizPainterFor(_CategoryViz viz, Color color, double t) {
+    switch (viz) {
+      case _CategoryViz.sortingBars:
+        return _SortBarsPainter(color: color, progress: t);
+      case _CategoryViz.binarySearch:
+        return _BinarySearchPainter(color: color, progress: t);
+      case _CategoryViz.graph:
+        return _PathfindingPainter(progress: t, color: color, accent: _orange);
+      case _CategoryViz.tree:
+        return _TreePainter(color: color, progress: t);
+      case _CategoryViz.dpGrid:
+        return _DPGridPainter(color: color, progress: t);
+    }
+  }
+
+  Widget _categoryIcon(IconData icon, Color color, {bool large = false}) {
+    final size = large ? 44.0 : 42.0;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0.08)],
+        ),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 14, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Icon(icon, color: color, size: large ? 22 : 20),
+    );
+  }
+
+  Widget _buildStatTile(String title, String value, IconData icon, Color color) {
     return GlassPanel(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      borderRadius: 16,
+      borderRadius: 18,
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(
-                color: color.withValues(alpha: 0.18),
-                width: 1,
-              ),
-            ),
-            child: Icon(icon, color: color, size: 19),
-          ),
+          _categoryIcon(icon, color),
           const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -581,10 +837,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
               Text(
                 title.toUpperCase(),
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withValues(alpha: 0.35),
                   fontSize: 9,
                   letterSpacing: 2,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 3),
@@ -593,17 +849,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
                 ),
               ),
             ],
           ),
           const Spacer(),
-          Icon(
-            Icons.arrow_forward_ios,
-            color: Colors.white.withValues(alpha: 0.15),
-            size: 13,
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.arrow_forward_ios, color: Colors.white.withValues(alpha: 0.4), size: 12),
           ),
         ],
       ),
@@ -624,8 +884,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
             return Stack(
               children: [
                 AnimatedPositioned(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOutCubic,
+                  duration: const Duration(milliseconds: 450),
+                  curve: Curves.easeOutBack,
                   left: _activeNav * itemWidth + 8,
                   top: 8,
                   bottom: 8,
@@ -641,20 +901,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.white.withValues(alpha: 0.2),
+                              Colors.white.withValues(alpha: 0.22),
                               Colors.white.withValues(alpha: 0.05),
                             ],
                           ),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            width: 1,
-                          ),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.28), width: 1),
+                          boxShadow: [
+                            BoxShadow(color: _indigo.withValues(alpha: 0.3), blurRadius: 16),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ),
-
                 Row(
                   children: [
                     _navIcon(Icons.home_rounded, 0, itemWidth),
@@ -686,7 +945,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
         child: Center(
           child: AnimatedScale(
             duration: const Duration(milliseconds: 300),
-            scale: isActive ? 1.1 : 1.0,
+            curve: Curves.easeOutBack,
+            scale: isActive ? 1.15 : 1.0,
             child: (index == 2 && imageFile != null)
                 ? Container(
                     width: 28,
@@ -697,10 +957,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
                         color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
-                      image: DecorationImage(
-                        image: FileImage(imageFile),
-                        fit: BoxFit.cover,
-                      ),
+                      image: DecorationImage(image: FileImage(imageFile), fit: BoxFit.cover),
                     ),
                   )
                 : Icon(
@@ -714,15 +971,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     );
   }
 
-  Widget _sectionLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 19,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
-      ),
+  Widget _sectionLabel(String text, {String? eyebrow}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (eyebrow != null) ...[
+          Row(
+            children: [
+              Container(width: 14, height: 1.5, color: _orange.withValues(alpha: 0.7)),
+              const SizedBox(width: 8),
+              Text(
+                eyebrow,
+                style: TextStyle(
+                  color: _orange.withValues(alpha: 0.85),
+                  fontSize: 9,
+                  letterSpacing: 2.4,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+        ],
+        Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.4,
+          ),
+        ),
+      ],
     );
   }
 
@@ -730,19 +1010,466 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStat
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.28), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.32), width: 1),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontSize: 9, letterSpacing: 2, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  Widget _monoChip(String text, {bool compact = false}) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 9,
+        vertical: compact ? 2 : 3,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: color,
-          fontSize: 9,
-          letterSpacing: 2,
-          fontWeight: FontWeight.w700,
+          color: Colors.white.withValues(alpha: 0.7),
+          fontSize: compact ? 9 : 10,
+          fontFamily: 'monospace',
+          fontFeatures: const [FontFeature.tabularFigures()],
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
         ),
       ),
     );
   }
+}
+
+enum _CategoryViz { sortingBars, binarySearch, graph, tree, dpGrid }
+
+class _CategoryItem {
+  final String title;
+  final String subtitle;
+  final String complexity;
+  final IconData icon;
+  final Color color;
+  final _CategoryViz viz;
+  final String tagline;
+  _CategoryItem(
+      this.title, this.subtitle, this.complexity, this.icon, this.color, this.viz,
+      {required this.tagline});
+}
+
+// ============= Pathfinding (Graphs) =============
+class _PathfindingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color accent;
+
+  _PathfindingPainter({required this.progress, required this.color, required this.accent});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final nodePaint = Paint()..color = Colors.white.withValues(alpha: 0.08);
+    final activePaint = Paint()..color = color.withValues(alpha: 0.9);
+    final glowPaint = Paint()
+      ..color = color.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+
+    const cols = 9;
+    const rows = 4;
+    final dx = size.width / (cols + 1);
+    final dy = size.height / (rows + 1);
+
+    final nodes = <Offset>[];
+    for (var r = 1; r <= rows; r++) {
+      for (var c = 1; c <= cols; c++) {
+        nodes.add(Offset(c * dx, r * dy));
+      }
+    }
+    for (final n in nodes) {
+      canvas.drawCircle(n, 1.5, nodePaint);
+    }
+
+    final path = Path();
+    final waypoints = <Offset>[
+      Offset(dx * 1, dy * 3),
+      Offset(dx * 3, dy * 3),
+      Offset(dx * 3, dy * 2),
+      Offset(dx * 5, dy * 2),
+      Offset(dx * 5, dy * 1),
+      Offset(dx * 7, dy * 1),
+      Offset(dx * 7, dy * 3),
+      Offset(dx * 9, dy * 3),
+    ];
+
+    path.moveTo(waypoints.first.dx, waypoints.first.dy);
+    for (var i = 1; i < waypoints.length; i++) {
+      path.lineTo(waypoints[i].dx, waypoints[i].dy);
+    }
+
+    final metrics = path.computeMetrics().toList();
+    final total = metrics.fold<double>(0, (s, m) => s + m.length);
+    final visibleLen = total * progress;
+
+    final extracted = Path();
+    var consumed = 0.0;
+    for (final m in metrics) {
+      if (consumed + m.length <= visibleLen) {
+        extracted.addPath(m.extractPath(0, m.length), Offset.zero);
+      } else {
+        extracted.addPath(m.extractPath(0, math.max(0, visibleLen - consumed)), Offset.zero);
+        break;
+      }
+      consumed += m.length;
+    }
+
+    final linePaint = Paint()
+      ..color = color.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+    final lineGlow = Paint()
+      ..color = color.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+
+    canvas.drawPath(extracted, lineGlow);
+    canvas.drawPath(extracted, linePaint);
+
+    var distSoFar = 0.0;
+    for (var i = 0; i < waypoints.length; i++) {
+      if (i > 0) distSoFar += (waypoints[i] - waypoints[i - 1]).distance;
+      if (distSoFar <= visibleLen) {
+        canvas.drawCircle(waypoints[i], 5, glowPaint);
+        canvas.drawCircle(waypoints[i], 2.5, activePaint);
+      }
+    }
+
+    if (visibleLen > 0 && visibleLen < total) {
+      Offset? head;
+      var c = 0.0;
+      for (final m in metrics) {
+        if (c + m.length >= visibleLen) {
+          final tan = m.getTangentForOffset(visibleLen - c);
+          head = tan?.position;
+          break;
+        }
+        c += m.length;
+      }
+      if (head != null) {
+        canvas.drawCircle(
+            head,
+            9,
+            Paint()
+              ..color = accent.withValues(alpha: 0.25)
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10));
+        canvas.drawCircle(head, 4, Paint()..color = accent);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PathfindingPainter old) => old.progress != progress;
+}
+
+// ============= Sorting bars =============
+class _SortBarsPainter extends CustomPainter {
+  final Color color;
+  final double progress;
+  _SortBarsPainter({required this.color, required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const count = 22;
+    final w = size.width / (count * 1.25);
+    final gap = w * 0.25;
+    final padX = (size.width - (count * (w + gap) - gap)) / 2;
+    final topPad = size.height * 0.1;
+    final maxH = size.height - topPad - 4;
+
+    for (var i = 0; i < count; i++) {
+      final t = (math.sin((progress * 2 * math.pi) + i * 0.45) + 1) / 2;
+      final sortedH = (i + 1) / count;
+      // Fade from chaotic to sorted across the loop
+      final mix = (math.sin(progress * 2 * math.pi) + 1) / 2;
+      final h = (sortedH * (0.5 + 0.4 * mix) + t * (0.5 - 0.4 * mix)) * maxH;
+      final x = padX + i * (w + gap);
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, size.height - h - 2, w, h),
+        const Radius.circular(2),
+      );
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [color.withValues(alpha: 0.85), color.withValues(alpha: 0.15)],
+          ).createShader(rect.outerRect),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SortBarsPainter old) => old.progress != progress;
+}
+
+// ============= Binary Search =============
+class _BinarySearchPainter extends CustomPainter {
+  final Color color;
+  final double progress;
+  _BinarySearchPainter({required this.color, required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const count = 16;
+    final w = size.width / (count * 1.2);
+    final gap = w * 0.2;
+    final padX = (size.width - (count * (w + gap) - gap)) / 2;
+    final cellH = size.height * 0.42;
+    final cellY = size.height / 2 - cellH / 2;
+
+    // Animated search bracket: collapses toward target
+    final target = 11; // index of target
+    final phase = (progress * 4) % 4; // 4 collapse stages
+    int lo = 0, hi = count - 1;
+    int stage = phase.floor();
+    for (var s = 0; s < stage; s++) {
+      final mid = (lo + hi) ~/ 2;
+      if (mid < target) {
+        lo = mid + 1;
+      } else if (mid > target) {
+        hi = mid - 1;
+      }
+    }
+    final mid = (lo + hi) ~/ 2;
+
+    for (var i = 0; i < count; i++) {
+      final x = padX + i * (w + gap);
+      final inRange = i >= lo && i <= hi;
+      final isMid = i == mid;
+      final isTarget = i == target;
+
+      Color fill;
+      double alpha;
+      if (isTarget && stage >= 3) {
+        fill = color;
+        alpha = 0.95;
+      } else if (isMid) {
+        fill = color;
+        alpha = 0.7;
+      } else if (inRange) {
+        fill = color;
+        alpha = 0.28;
+      } else {
+        fill = Colors.white;
+        alpha = 0.05;
+      }
+
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, cellY, w, cellH),
+        const Radius.circular(3),
+      );
+      canvas.drawRRect(rect, Paint()..color = fill.withValues(alpha: alpha));
+
+      if (isMid || (isTarget && stage >= 3)) {
+        canvas.drawRRect(
+          rect,
+          Paint()
+            ..color = color.withValues(alpha: 0.6)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2,
+        );
+      }
+    }
+
+    // Brackets [lo  hi]
+    final loX = padX + lo * (w + gap);
+    final hiX = padX + hi * (w + gap) + w;
+    final bracketPaint = Paint()
+      ..color = color.withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeCap = StrokeCap.round;
+    final bracketY = cellY - 6;
+    final bracketY2 = cellY + cellH + 6;
+    canvas.drawLine(Offset(loX, bracketY), Offset(loX, bracketY2), bracketPaint);
+    canvas.drawLine(Offset(hiX, bracketY), Offset(hiX, bracketY2), bracketPaint);
+
+    // Mid pointer
+    final midCenterX = padX + mid * (w + gap) + w / 2;
+    final pointerPath = Path()
+      ..moveTo(midCenterX, bracketY2 + 3)
+      ..lineTo(midCenterX - 4, bracketY2 + 9)
+      ..lineTo(midCenterX + 4, bracketY2 + 9)
+      ..close();
+    canvas.drawPath(pointerPath, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BinarySearchPainter old) => old.progress != progress;
+}
+
+// ============= Tree =============
+class _TreePainter extends CustomPainter {
+  final Color color;
+  final double progress;
+  _TreePainter({required this.color, required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Build tree: 3 levels (1 + 2 + 4 = 7 nodes)
+    final cx = size.width / 2;
+    final topY = size.height * 0.18;
+    final midY = size.height * 0.55;
+    final botY = size.height * 0.92;
+
+    final root = Offset(cx, topY);
+    final l1 = Offset(cx - size.width * 0.22, midY);
+    final r1 = Offset(cx + size.width * 0.22, midY);
+    final l1l = Offset(cx - size.width * 0.36, botY);
+    final l1r = Offset(cx - size.width * 0.10, botY);
+    final r1l = Offset(cx + size.width * 0.10, botY);
+    final r1r = Offset(cx + size.width * 0.36, botY);
+
+    // Edges
+    final edges = [
+      [root, l1], [root, r1],
+      [l1, l1l], [l1, l1r],
+      [r1, r1l], [r1, r1r],
+    ];
+    final edgePaint = Paint()
+      ..color = color.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    for (final e in edges) {
+      canvas.drawLine(e[0], e[1], edgePaint);
+    }
+
+    // Inorder traversal sequence highlights:
+    // l1l, l1, l1r, root, r1l, r1, r1r
+    final sequence = [l1l, l1, l1r, root, r1l, r1, r1r];
+    final activeIdx = (progress * sequence.length).floor() % sequence.length;
+
+    final allNodes = [root, l1, r1, l1l, l1r, r1l, r1r];
+    for (final n in allNodes) {
+      canvas.drawCircle(n, 5, Paint()..color = Colors.white.withValues(alpha: 0.08));
+      canvas.drawCircle(
+        n,
+        4,
+        Paint()
+          ..color = color.withValues(alpha: 0.25)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+    }
+
+    // Highlight visited so far
+    for (var i = 0; i <= activeIdx; i++) {
+      canvas.drawCircle(sequence[i], 4, Paint()..color = color.withValues(alpha: 0.6));
+    }
+
+    // Active node — pulsing glow
+    final active = sequence[activeIdx];
+    final pulse = (math.sin(progress * 2 * math.pi * sequence.length) + 1) / 2;
+    canvas.drawCircle(
+      active,
+      10 + pulse * 4,
+      Paint()
+        ..color = color.withValues(alpha: 0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawCircle(active, 5, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TreePainter old) => old.progress != progress;
+}
+
+// ============= DP Grid =============
+class _DPGridPainter extends CustomPainter {
+  final Color color;
+  final double progress;
+  _DPGridPainter({required this.color, required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const cols = 12;
+    const rows = 4;
+    final cellW = (size.width - 24) / cols;
+    final cellH = (size.height - 16) / rows;
+    final padX = 12.0;
+    final padY = 8.0;
+
+    final total = rows * cols;
+    final filled = (progress * total).floor();
+
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        final idx = r * cols + c;
+        final x = padX + c * cellW;
+        final y = padY + r * cellH;
+        final rect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(x + 1, y + 1, cellW - 2, cellH - 2),
+          const Radius.circular(3),
+        );
+
+        if (idx < filled) {
+          // Filled cell — value intensity grows with row+col (mimic DP table)
+          final intensity = ((r + c) / (rows + cols - 2)).clamp(0.0, 1.0);
+          canvas.drawRRect(
+            rect,
+            Paint()
+              ..shader = LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withValues(alpha: 0.2 + intensity * 0.5),
+                  color.withValues(alpha: 0.1 + intensity * 0.3),
+                ],
+              ).createShader(rect.outerRect),
+          );
+        } else {
+          canvas.drawRRect(
+            rect,
+            Paint()..color = Colors.white.withValues(alpha: 0.04),
+          );
+        }
+      }
+    }
+
+    // Active cell (currently being filled) — pulsing
+    if (filled < total) {
+      final r = filled ~/ cols;
+      final c = filled % cols;
+      final x = padX + c * cellW;
+      final y = padY + r * cellH;
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x + 1, y + 1, cellW - 2, cellH - 2),
+        const Radius.circular(3),
+      );
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..color = color.withValues(alpha: 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DPGridPainter old) => old.progress != progress;
 }

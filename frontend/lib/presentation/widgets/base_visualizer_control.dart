@@ -11,6 +11,7 @@ class BaseVisualizerControl extends ConsumerStatefulWidget {
   final bool isPlaying;
   final bool canStepBack;
   final bool canStepForward;
+  final bool showArrayEditor;
   final VoidCallback onPlayPause;
   final VoidCallback onStepBack;
   final VoidCallback onStepForward;
@@ -36,6 +37,7 @@ class BaseVisualizerControl extends ConsumerStatefulWidget {
     required this.onArrayUpdated,
     this.currentTarget,
     this.onTargetUpdated,
+    this.showArrayEditor = true,
   });
 
   bool get isSearchMode => currentTarget != null && onTargetUpdated != null;
@@ -189,6 +191,7 @@ class _BaseVisualizerControlState extends ConsumerState<BaseVisualizerControl> w
                 child: Column(
                   children: [
                     // ── Array Configuration Row ──
+                   if (widget.showArrayEditor)
                     Row(
                       children: [
                         Expanded(
@@ -203,7 +206,8 @@ class _BaseVisualizerControlState extends ConsumerState<BaseVisualizerControl> w
                         _sizeStepperWidget(),
                       ],
                     ),
-                    const SizedBox(height: 10),
+ 
+                   if (widget.showArrayEditor) const SizedBox(height: 10), // spacing
 
                     // ── Target Row (search mode) ──
                     if (widget.isSearchMode) ...[

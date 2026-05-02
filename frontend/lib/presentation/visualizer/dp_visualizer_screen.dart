@@ -18,6 +18,7 @@ import '../theme/app_colors.dart';
 import '../state/visualizer_state.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/base_visualizer_control.dart';
+import 'dp_input_sheet.dart';
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ const dpAlgorithmNames = [
   'Max Subarray Sum',
   'Max Subarray Product',
 ];
+
 
 DPEngine _engineFor(String name) {
   switch (name) {
@@ -97,6 +99,7 @@ class _DPVisualizerScreenState extends ConsumerState<DPVisualizerScreen> {
   late List<DPStepState> _steps;
   int _currentStepIndex = 0;
   bool _isPlaying = false;
+  late Map<String, dynamic> _currentInput;
 
   // ── Pseudocode scroll (same pattern as VisualizerScreen) ─────────────────
   final ScrollController _pseudoScrollController = ScrollController();
@@ -107,6 +110,7 @@ class _DPVisualizerScreenState extends ConsumerState<DPVisualizerScreen> {
   @override
   void initState() {
     super.initState();
+    _initInput();
     _rebuild();
   }
 
@@ -117,15 +121,110 @@ class _DPVisualizerScreenState extends ConsumerState<DPVisualizerScreen> {
     super.dispose();
   }
 
+  void _initInput() {
+  switch (widget.algorithmName) {
+    case 'Fibonacci Sequence':
+      _currentInput = {'n': 9};
+      break;
+    case '0/1 Knapsack':
+      _currentInput = {
+        'weights': [2, 3, 4, 5],
+        'values': [3, 4, 5, 6],
+        'capacity': 8,
+      };
+      break;
+    case 'Longest Common Subsequence':
+      _currentInput = {'s1': 'ABCBDAB', 's2': 'BDCAB'};
+      break;
+    case 'Longest Increasing Subsequence':
+      _currentInput = {'array': [10, 9, 2, 5, 3, 7, 101, 18]};
+      break;
+    case 'Coin Change':
+      _currentInput = {'coins': [1, 2, 5], 'amount': 11};
+      break;
+    case 'Edit Distance':
+      _currentInput = {'s1': 'sunday', 's2': 'saturday'};
+      break;
+    case 'Rod Cutting':
+      _currentInput = {'prices': [1, 5, 8, 9, 10, 17, 17, 20], 'rodLength': 8};
+      break;
+    case 'Matrix Chain Multiplication':
+      _currentInput = {'dims': [10, 30, 5, 60]};
+      break;
+    case 'Max Subarray Sum':
+      _currentInput = {'array': [-2, 1, -3, 4, -1, 2, 1, -5, 4]};
+      break;
+    case 'Max Subarray Product':
+      _currentInput = {'array': [2, 3, -2, 4, -1]};
+      break;
+    default:
+      _currentInput = {};
+    }
+  }
+
+  DPEngine _engineForWithInput() {
+  final input = _currentInput;
+  switch (widget.algorithmName) {
+    case 'Fibonacci Sequence':
+      return FibonacciSequenceEngine(n: input['n'] as int);
+    case '0/1 Knapsack':
+      return KnapsackEngine(
+        weights: List<int>.from(input['weights']),
+        values: List<int>.from(input['values']),
+        capacity: input['capacity'] as int,
+      );
+    case 'Longest Common Subsequence':
+      return LCSEngine(s1: input['s1'], s2: input['s2']);
+    case 'Longest Increasing Subsequence':
+      return LISEngine(array: List<int>.from(input['array']));
+    case 'Coin Change':
+      return CoinChangeEngine(
+        coins: List<int>.from(input['coins']),
+        amount: input['amount'] as int,
+      );
+    case 'Edit Distance':
+      return EditDistanceEngine(s1: input['s1'], s2: input['s2']);
+    case 'Rod Cutting':
+      return RodCuttingEngine(
+        prices: List<int>.from(input['prices']),
+        rodLength: input['rodLength'] as int,
+      );
+    case 'Matrix Chain Multiplication':
+      return MatrixChainEngine(dims: List<int>.from(input['dims']));
+    case 'Max Subarray Sum':
+      return MaxSubarraySumEngine(array: List<int>.from(input['array']));
+    case 'Max Subarray Product':
+      return MaxSubarrayProductEngine(array: List<int>.from(input['array']));
+    default:
+      return const FibonacciSequenceEngine();
+    }
+  }
+
   void _rebuild() {
-    _steps = _engineFor(widget.algorithmName).generateSteps();
+    final engine = _engineForWithInput(); 
+    _steps = engine.generateSteps();
     _currentStepIndex = 0;
+    if (_isPlaying) setState(() => _isPlaying = false); // stop if playing
   }
 
   void _restart() {
     if (_isPlaying) setState(() => _isPlaying = false);
     setState(() => _currentStepIndex = 0);
   }
+
+  void _openInputSheet() async {
+  final result = await showModalBottomSheet<Map<String, dynamic>>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => DPInputSheet(algorithmName: widget.algorithmName),
+  );
+  if (result != null && mounted) {
+    setState(() {
+      _currentInput = result;
+    });
+    _rebuild();
+  }
+}
 
   List<String> get _pseudoCode =>
       _buildPseudoCodeMap()[widget.algorithmName] ?? const [];
@@ -188,7 +287,6 @@ class _DPVisualizerScreenState extends ConsumerState<DPVisualizerScreen> {
   Widget build(BuildContext context) {
     final step = _steps[_currentStepIndex];
     final isDone = _currentStepIndex == _steps.length - 1;
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: _bg,
@@ -203,6 +301,13 @@ class _DPVisualizerScreenState extends ConsumerState<DPVisualizerScreen> {
           widget.algorithmName,
           style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'Edit Input',
+            onPressed: _openInputSheet,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Stack(
@@ -386,30 +491,18 @@ class _DPVisualizerScreenState extends ConsumerState<DPVisualizerScreen> {
                   ),
 
                 // ── Playback controls ─────────────────────────────────────────
-                // NOTE: BaseVisualizerControl is reused as-is.
-                // The onArrayUpdated callback receives the new array and
-                // we regenerate steps — same pattern as VisualizerScreen.
-                // For DP algorithms, the array field is not directly editable
-                // via the control bar, so we pass a no-op; you can wire up a
-                // custom input sheet later (see _DPInputSheet at bottom).
-                BaseVisualizerControl(
-                  isPlaying: _isPlaying,
-                  canStepBack: _currentStepIndex > 0,
-                  canStepForward: _currentStepIndex < _steps.length - 1,
-                  onPlayPause: _togglePlay,
-                  onStepBack: _prevStep,
-                  onStepForward: _nextStep,
-                  onRestart: _restart,
-                  // DP screens expose the current dp table values as the
-                  // "current array" — the control bar can display step count.
-                  currentArray: step.table1D != null
-                      ? step.table1D!
-                            .map((v) => (v ?? 0).toInt())
-                            .toList()
-                      : [],
-                  onArrayUpdated: (_) {}, // override with custom input later
-                ),
-              ],
+              BaseVisualizerControl(
+  isPlaying: _isPlaying,
+  canStepBack: _currentStepIndex > 0,
+  canStepForward: _currentStepIndex < _steps.length - 1,
+  onPlayPause: _togglePlay,
+  onStepBack: _prevStep,
+  onStepForward: _nextStep,
+  onRestart: _restart,
+  showArrayEditor: false,               // <-- only for single-array algos
+  currentArray: [],
+  onArrayUpdated: (_) {},
+),],
             ),
           ],
         ),
@@ -468,8 +561,10 @@ class _1DTableView extends StatelessWidget {
               // Table cells
               SizedBox(
                 height: cellH,
-                child: Row(
+                child: Center( 
+                  child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: List.generate(n, (i) {
                     final isWrite = i == step.activeCol;
                     final isRead = step.readCells.contains(i);
@@ -486,6 +581,7 @@ class _1DTableView extends StatelessWidget {
                     );
                   }),
                 ),
+               )
               ),
 
               // Arrow layer for LIS
@@ -712,9 +808,11 @@ class _LabelRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
+@override
+Widget build(BuildContext context) {
+  return Center(
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: labels
           .map((l) => SizedBox(
                 width: cellWidth,
@@ -728,8 +826,9 @@ class _LabelRow extends StatelessWidget {
                 ),
               ))
           .toList(),
-    );
-  }
+    ),
+  );
+ }
 }
 
 // ─── Arrow Painter (LIS) ──────────────────────────────────────────────────────
