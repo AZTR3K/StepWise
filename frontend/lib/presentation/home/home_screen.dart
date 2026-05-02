@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/presentation/home/category_detail_screen.dart';
 import 'package:frontend/presentation/profile/profile_screen.dart';
+import 'package:frontend/presentation/visualizer/graph_visualizer_screen.dart';
+import 'package:frontend/presentation/visualizer/visualizer_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../../domain/providers/profile_provider.dart';
@@ -281,7 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             ),
             const Spacer(),
-            _iconBtn(Icons.notifications_outlined, () {}),
+            _iconBtn(Icons.notifications_outlined, _showNotificationSheet),
           ],
         ),
       ),
@@ -402,7 +404,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 22),
-                _primaryCTA(label: 'Launch Visualizer', icon: Icons.play_arrow_rounded, onTap: () {}),
+                _primaryCTA(
+                  label: 'Launch Visualizer',
+                  icon: Icons.play_arrow_rounded,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const GraphVisualizerScreen(algorithmName: "Dijkstra's"),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -557,7 +568,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
           const SizedBox(height: 18),
           GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const VisualizerScreen(algorithmName: 'Merge Sort'),
+              ),
+            ),
             child: Container(
               width: double.infinity,
               height: 44,
@@ -824,48 +840,476 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildStatTile(String title, String value, IconData icon, Color color) {
-    return GlassPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      borderRadius: 18,
-      child: Row(
-        children: [
-          _categoryIcon(icon, color),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () => _showStatSheet(title, value, icon, color),
+      child: GlassPanel(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        borderRadius: 18,
+        child: Row(
+          children: [
+            _categoryIcon(icon, color),
+            const SizedBox(width: 14),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_forward_ios, color: Colors.white.withValues(alpha: 0.4), size: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNotificationSheet() {
+    final notifications = [
+      _NotifItem(
+        icon: Icons.local_fire_department_rounded,
+        color: _orange,
+        title: 'Streak at risk!',
+        body: "You haven't visualized anything today. Keep your 7-day streak alive.",
+        time: '2m ago',
+        isUnread: true,
+      ),
+      _NotifItem(
+        icon: Icons.emoji_events_rounded,
+        color: const Color(0xFFFFD700),
+        title: 'Milestone unlocked',
+        body: 'You solved 40+ problems. You\'ve reached Logic Scholar status.',
+        time: '1h ago',
+        isUnread: true,
+      ),
+      _NotifItem(
+        icon: Icons.bolt_rounded,
+        color: _indigoLight,
+        title: 'Daily challenge ready',
+        body: "Today's challenge: Trace Dijkstra's on a 6-node weighted graph.",
+        time: '3h ago',
+        isUnread: true,
+      ),
+      _NotifItem(
+        icon: Icons.add_circle_outline_rounded,
+        color: const Color(0xFF34D399),
+        title: 'New algorithm added',
+        body: 'Floyd-Warshall is now available under Graphs. All-pairs shortest path.',
+        time: 'Yesterday',
+        isUnread: false,
+      ),
+      _NotifItem(
+        icon: Icons.trending_up_rounded,
+        color: const Color(0xFF8E9BFF),
+        title: 'Complexity Rank up',
+        body: "You've advanced to Level 4 Scholar after completing Merge Sort.",
+        time: '2d ago',
+        isUnread: false,
+      ),
+    ];
+
+    final unreadCount = notifications.where((n) => n.isUnread).length;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.62,
+        minChildSize: 0.4,
+        maxChildSize: 0.88,
+        expand: false,
+        builder: (_, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D0E1C),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: _indigo.withValues(alpha: 0.22),
+                blurRadius: 48,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
+          child: Column(
             children: [
-              Text(
-                title.toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.35),
-                  fontSize: 9,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w700,
+              // Handle + header — fixed, not scrollable
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Row(
+                      children: [
+                        const Text(
+                          'Notifications',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        if (unreadCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _orange.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: _orange.withValues(alpha: 0.4)),
+                            ),
+                            child: Text(
+                              '$unreadCount new',
+                              style: TextStyle(
+                                color: _orange,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Text(
+                            'Mark all read',
+                            style: TextStyle(
+                              color: _indigoLight.withValues(alpha: 0.8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      height: 1,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withValues(alpha: 0),
+                            Colors.white.withValues(alpha: 0.08),
+                            Colors.white.withValues(alpha: 0),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
+              // Scrollable list
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  itemCount: notifications.length,
+                  itemBuilder: (_, i) => _buildNotifTile(notifications[i]),
                 ),
               ),
             ],
           ),
-          const Spacer(),
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotifTile(_NotifItem item) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: item.isUnread
+            ? item.color.withValues(alpha: 0.05)
+            : Colors.white.withValues(alpha: 0.02),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: item.isUnread
+              ? item.color.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.05),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [item.color.withValues(alpha: 0.28), item.color.withValues(alpha: 0.07)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: item.color.withValues(alpha: 0.3)),
+                boxShadow: [
+                  BoxShadow(color: item.color.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 3)),
+                ],
+              ),
+              child: Icon(item.icon, color: item.color, size: 20),
             ),
-            child: Icon(Icons.arrow_forward_ios, color: Colors.white.withValues(alpha: 0.4), size: 12),
-          ),
-        ],
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: TextStyle(
+                            color: item.isUnread ? Colors.white : Colors.white.withValues(alpha: 0.6),
+                            fontSize: 13.5,
+                            fontWeight: item.isUnread ? FontWeight.w700 : FontWeight.w500,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item.time,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.body,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: item.isUnread ? 0.5 : 0.35),
+                      fontSize: 12,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (item.isUnread) ...[
+              const SizedBox(width: 10),
+              Container(
+                width: 7,
+                height: 7,
+                margin: const EdgeInsets.only(top: 5),
+                decoration: BoxDecoration(
+                  color: item.color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: item.color.withValues(alpha: 0.6), blurRadius: 6),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showStatSheet(String title, String value, IconData icon, Color color) {
+    // Breakdown data per tile — swap in real provider values when ready
+    final breakdowns = <String, List<_StatRow>>{
+      'Logic Mastery': [
+        _StatRow('Sorting',             14, 18, const Color(0xFF4FC3F7)),
+        _StatRow('Searching',           10, 12, _orange),
+        _StatRow('Graphs',               8, 14, const Color(0xFF34D399)),
+        _StatRow('Trees',                6, 10, const Color(0xFF8E9BFF)),
+        _StatRow('Dynamic Programming',  4, 12, const Color(0xFFB388FF)),
+      ],
+      'Complexity Rank': [
+        _StatRow('Current Streak',   7,  14, _orange),
+        _StatRow('Best Streak',     12,  14, const Color(0xFF4FC3F7)),
+        _StatRow('Perfect Runs',     5,  10, const Color(0xFF34D399)),
+        _StatRow('Hints Used',       3,  10, _indigoLight),
+      ],
+    };
+
+    final rows = breakdowns[title] ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D0E1C),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.2),
+              blurRadius: 48,
+              offset: const Offset(0, -6),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 18, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
+            // Header row
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0.07)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: color.withValues(alpha: 0.35)),
+                    boxShadow: [
+                      BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 14, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 26),
+            // Breakdown rows
+            ...rows.map(
+              (row) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          row.label,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.65),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${row.current} / ${row.total}',
+                          style: TextStyle(
+                            color: row.color,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 7),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Stack(
+                        children: [
+                          Container(height: 5, color: Colors.white.withValues(alpha: 0.06)),
+                          FractionallySizedBox(
+                            widthFactor: (row.current / row.total).clamp(0.0, 1.0),
+                            child: Container(
+                              height: 5,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [row.color, row.color.withValues(alpha: 0.55)],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(color: row.color.withValues(alpha: 0.45), blurRadius: 6),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1060,6 +1504,32 @@ class _CategoryItem {
   _CategoryItem(
       this.title, this.subtitle, this.complexity, this.icon, this.color, this.viz,
       {required this.tagline});
+}
+
+// ============= Stat breakdown data =============
+class _StatRow {
+  final String label;
+  final int current;
+  final int total;
+  final Color color;
+  const _StatRow(this.label, this.current, this.total, this.color);
+}
+
+class _NotifItem {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+  final String time;
+  final bool isUnread;
+  const _NotifItem({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.body,
+    required this.time,
+    required this.isUnread,
+  });
 }
 
 // ============= Pathfinding (Graphs) =============
