@@ -1,6 +1,6 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/presentation/home/category_detail_screen.dart';
 import 'package:frontend/presentation/profile/profile_screen.dart';
@@ -9,6 +9,12 @@ import 'package:frontend/presentation/visualizer/visualizer_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../../domain/providers/profile_provider.dart';
+
+final List<({IconData icon, IconData activeIcon, String label})> _navItems = const [
+  (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
+  (icon: Icons.explore_outlined, activeIcon: Icons.explore_rounded, label: 'Explore'),
+  (icon: Icons.person_outline, activeIcon: Icons.person_rounded, label: 'Profile'),
+];
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -59,24 +65,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
-      body: Stack(
+      body: LiquidGlassView(
+        realTimeCapture: true,
+        useSync: true,
+        pixelRatio: 0.85,
+        backgroundWidget: Stack(
+          children: [
+            Positioned(top: -140, right: -120, child: _ambientGlow(_indigo, 0.12, 380)),
+            Positioned(top: 320, left: -140, child: _ambientGlow(_indigoLight, 0.08, 320)),
+            Positioned(top: 600, right: -60, child: _ambientGlow(_orange, 0.05, 240)),
+            Positioned(bottom: 120, left: -60, child: _ambientGlow(_indigo, 0.06, 280)),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: _buildCurrentTab(),
+            ),
+          ],
+        ),
         children: [
-          Positioned(top: -140, right: -120, child: _ambientGlow(_indigo, 0.12, 380)),
-          Positioned(top: 320, left: -140, child: _ambientGlow(_indigoLight, 0.08, 320)),
-          Positioned(top: 600, right: -60, child: _ambientGlow(_orange, 0.05, 240)),
-          Positioned(bottom: 120, left: -60, child: _ambientGlow(_indigo, 0.06, 280)),
-
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            child: _buildCurrentTab(),
-          ),
-
-          Align(alignment: Alignment.bottomCenter, child: _buildBottomNav()),
+          _buildBottomNavLens(),
         ],
       ),
     );
@@ -1314,106 +1325,182 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildBottomNav() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 34),
-      child: GlassPanel(
-        borderRadius: 35,
-        padding: EdgeInsets.zero,
-        height: 64,
-        alpha: 0.08,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final itemWidth = constraints.maxWidth / 3;
-            return Stack(
-              children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 450),
-                  curve: Curves.easeOutBack,
-                  left: _activeNav * itemWidth + 8,
-                  top: 8,
-                  bottom: 8,
-                  width: itemWidth - 16,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(28),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(28),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.22),
-                              Colors.white.withValues(alpha: 0.05),
-                            ],
-                          ),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.28), width: 1),
-                          boxShadow: [
-                            BoxShadow(color: _indigo.withValues(alpha: 0.3), blurRadius: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    _navIcon(Icons.home_rounded, 0, itemWidth),
-                    _navIcon(Icons.explore_outlined, 1, itemWidth),
-                    _navIcon(Icons.person_outline, 2, itemWidth),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
+  // ============= LIQUID GLASS BOTTOM NAV =============
+  // Returns a LiquidGlass lens that sits at the bottom of the LiquidGlassView.
+  // The nav icons are overlaid as the lens's child so they render on top of
+  // the true glass refraction effect.
+  LiquidGlass _buildBottomNavLens() {
+    final screenWidth = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width /
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    final navWidth = screenWidth - 48;
+
+    return LiquidGlass(
+      width: navWidth,
+      height: 64,
+      // Barely-there tint — let the shader do the heavy lifting
+      color: Colors.white.withValues(alpha: 0.03),
+      distortion: 0.08,
+      distortionWidth: 32,
+      magnification: 1.0,
+      blur: LiquidGlassBlur(sigmaX: 22, sigmaY: 22),
+      shape: RoundedRectangleShape(cornerRadius: 36),
+      position: LiquidGlassAlignPosition(
+        alignment: Alignment.bottomCenter,
+        margin: const EdgeInsets.only(bottom: 36),
       ),
+      child: _buildNavIconRow(navWidth),
     );
   }
 
-  Widget _navIcon(IconData icon, int index, double itemWidth) {
-    final isActive = _activeNav == index;
-    final imageFile = ref.watch(profileProvider);
-
-    return GestureDetector(
-      onTap: () {
-        if (_activeNav != index) {
-          setState(() => _activeNav = index);
-        }
-      },
-      child: SizedBox(
-        width: itemWidth,
-        height: 64,
-        child: Center(
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutBack,
-            scale: isActive ? 1.15 : 1.0,
-            child: (index == 2 && imageFile != null)
-                ? Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
-                        width: 1.5,
-                      ),
-                      image: DecorationImage(image: FileImage(imageFile), fit: BoxFit.cover),
-                    ),
-                  )
-                : Icon(
-                    icon,
-                    size: 26,
-                    color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
-                  ),
+  Widget _buildNavIconRow(double navWidth) {
+    final itemWidth = navWidth / _navItems.length;
+    return Stack(
+      children: [
+        // Ultra-thin top specular line — like light catching a glass edge
+        Positioned(
+          top: 0,
+          left: 16,
+          right: 16,
+          height: 1,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withValues(alpha: 0.0),
+                  Colors.white.withValues(alpha: 0.55),
+                  Colors.white.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
           ),
         ),
-      ),
+        // Frosted white glass pill — pure, no brand tint
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutExpo,
+          left: _activeNav * itemWidth + 5,
+          top: 5,
+          bottom: 5,
+          width: itemWidth - 10,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              // Pure frosted white — top bright, fades softly
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: 0.10),
+                  Colors.white.withValues(alpha: 0.10),
+                ],
+              ),
+              // Hairline border catches light subtly
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.60),
+                width: 0.8,
+              ),
+              boxShadow: [
+                // Soft white ambient glow — no color
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  blurRadius: 14,
+                  spreadRadius: -1,
+                ),
+                // Subtle drop shadow for lift
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            // Inner top shine streak
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                height: 8,
+                margin: const EdgeInsets.fromLTRB(10, 2, 10, 0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.1),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Nav icons
+        Row(
+          children: List.generate(_navItems.length, (i) => _navIcon(i, itemWidth)),
+        ),
+      ],
     );
   }
+
+
+
+Widget _navIcon(int index, double itemWidth) {
+  final isActive = _activeNav == index;
+  final item = _navItems[index];
+  final imageFile = ref.watch(profileProvider);
+
+  return GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: () {
+      if (_activeNav != index) setState(() => _activeNav = index);
+    },
+    child: SizedBox(
+      width: itemWidth,
+      height: 68,
+      child: Center(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 350),
+          transitionBuilder: (child, anim) => ScaleTransition(
+            scale: Tween(begin: 0.6, end: 1.0).animate(
+              CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+            ),
+            child: FadeTransition(opacity: anim, child: child),
+          ),
+          child: (index == 2 && imageFile != null)
+              ? Container(
+                  key: ValueKey('avatar-$isActive'),
+                  width: isActive ? 30 : 26,
+                  height: isActive ? 30 : 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isActive
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.45),
+                      width: 1.5,
+                    ),
+                    image: DecorationImage(
+                      image: FileImage(imageFile),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              : Icon(
+                  isActive ? item.activeIcon : item.icon,
+                  key: ValueKey('${item.label}-$isActive'),
+                  size: isActive ? 26 : 22,
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.45),
+                ),
+        ),
+      ),
+    ),
+  );
+}
+
+
 
   Widget _sectionLabel(String text, {String? eyebrow}) {
     return Column(
